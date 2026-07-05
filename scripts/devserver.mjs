@@ -1,6 +1,6 @@
 // Static file server + /api reverse proxy for the ReportReady frontend.
 //
-// The shift-canvas SPA is a pre-built static bundle that calls the backend with
+// The ReportReady SPA is a pre-built static bundle that calls the backend with
 // same-origin relative URLs (e.g. `/api/feedback`). This server therefore does
 // two things on a single port:
 //   1. Serves the static frontend from STATIC_DIR (with SPA fallback to index.html).
@@ -10,7 +10,7 @@
 //   PORT        Port to listen on. Railway/hosts set this automatically.       (default 8080)
 //   API_HOST    Host of the running api-server.                                (default 127.0.0.1)
 //   API_PORT    Port of the running api-server.                                (default 3000)
-//   STATIC_DIR  Directory of built frontend assets.                            (default ../artifacts/shift-canvas/dist/public)
+//   STATIC_DIR  Directory of built frontend assets.                            (default ../artifacts/reportready/dist/public)
 //
 // Usage (local): start the backend first, then this server.
 //   (cd artifacts/api-server && PORT=3000 NODE_ENV=production node dist/index.mjs) &
@@ -32,7 +32,7 @@ const API_HOST = process.env.API_HOST || '127.0.0.1';
 const API_PORT = Number(process.env.API_PORT || 3000);
 const ROOT =
   process.env.STATIC_DIR ||
-  path.resolve(__dirname, '..', 'artifacts', 'shift-canvas', 'dist', 'public');
+  path.resolve(__dirname, '..', 'artifacts', 'reportready', 'dist', 'public');
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',

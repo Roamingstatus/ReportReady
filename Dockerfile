@@ -7,7 +7,7 @@ WORKDIR /app
 COPY artifacts/api-server/dist ./artifacts/api-server/dist
 
 # Pre-built static frontend (served by the web+proxy server).
-COPY artifacts/shift-canvas/dist/public ./artifacts/shift-canvas/dist/public
+COPY artifacts/reportready/dist/public ./artifacts/reportready/dist/public
 
 # Launcher + static/proxy web server.
 COPY scripts/start.mjs scripts/devserver.mjs ./scripts/
