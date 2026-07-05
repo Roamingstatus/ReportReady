@@ -24,6 +24,10 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const PORT = Number(process.env.PORT || process.env.WEB_PORT || 8080);
+// Bind to 0.0.0.0 so the public edge (e.g. Railway) can reach the container over
+// IPv4. Node's default (host omitted) binds IPv6 `::` only, which some platform
+// edge proxies fail to route to. Overridable via HOST.
+const HOST = process.env.HOST || '0.0.0.0';
 const API_HOST = process.env.API_HOST || '127.0.0.1';
 const API_PORT = Number(process.env.API_PORT || 3000);
 const ROOT =
@@ -89,7 +93,7 @@ http
     if ((req.url || '').startsWith('/api')) return proxyApi(req, res);
     return serveStatic(req, res);
   })
-  .listen(PORT, () => {
+  .listen(PORT, HOST, () => {
     console.log(`[devserver] static: ${ROOT}`);
-    console.log(`[devserver] listening on http://0.0.0.0:${PORT} (proxying /api -> ${API_HOST}:${API_PORT})`);
+    console.log(`[devserver] listening on http://${HOST}:${PORT} (proxying /api -> ${API_HOST}:${API_PORT})`);
   });
