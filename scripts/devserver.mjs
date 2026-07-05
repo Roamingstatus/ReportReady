@@ -11,6 +11,7 @@
 //   API_HOST    Host of the running api-server.                                (default 127.0.0.1)
 //   API_PORT    Port of the running api-server.                                (default 3000)
 //   STATIC_DIR  Directory of built frontend assets.                            (default ../artifacts/reportready/dist/public)
+//   VITE_BUY_ME_COFFEE_URL Optional external support/payment link for the SPA.
 //
 // Usage (local): start the backend first, then this server.
 //   (cd artifacts/api-server && PORT=3000 NODE_ENV=production node dist/index.mjs) &
@@ -33,6 +34,7 @@ const API_PORT = Number(process.env.API_PORT || 3000);
 const ROOT =
   process.env.STATIC_DIR ||
   path.resolve(__dirname, '..', 'artifacts', 'reportready', 'dist', 'public');
+const BUY_ME_COFFEE_URL = process.env.VITE_BUY_ME_COFFEE_URL || '';
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -66,6 +68,17 @@ function proxyApi(req, res) {
   req.pipe(proxyReq);
 }
 
+function serveRuntimeConfig(res) {
+  const config = {
+    buyMeCoffeeUrl: BUY_ME_COFFEE_URL,
+  };
+  res.writeHead(200, {
+    'content-type': 'text/javascript; charset=utf-8',
+    'cache-control': 'no-store',
+  });
+  res.end("window.__REPORTREADY_CONFIG__ = " + JSON.stringify(config) + ";\n");
+}
+
 async function serveStatic(req, res) {
   const urlPath = decodeURIComponent((req.url || '/').split('?')[0]);
   let filePath = path.join(ROOT, urlPath);
@@ -91,6 +104,7 @@ async function serveStatic(req, res) {
 http
   .createServer((req, res) => {
     if ((req.url || '').startsWith('/api')) return proxyApi(req, res);
+    if ((req.url || '').split('?')[0] === '/runtime-config.js') return serveRuntimeConfig(res);
     return serveStatic(req, res);
   })
   .listen(PORT, HOST, () => {

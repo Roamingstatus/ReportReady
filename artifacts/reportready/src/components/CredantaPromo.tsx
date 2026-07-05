@@ -39,7 +39,7 @@ export function CredantaPromo() {
 
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600">
           Credanta helps nurses organize credentials, track expiration dates, and
-          prepare for travel, agency, and per diem opportunities.
+          stay ready for new opportunities.
         </p>
 
         <a
