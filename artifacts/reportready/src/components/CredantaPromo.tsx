@@ -1,5 +1,5 @@
-// Non-intrusive promotion for Credanta, shown on the homepage between the report
-// sheet gallery and the "Buy Me a Coffee" section. It is a static card (no popup,
+// Non-intrusive promotion for Credanta, shown on the homepage below the Coming Soon report
+// sheet section. It is a static card (no popup,
 // no animation, no auto-expanding behavior, no email capture / login) and is
 // hidden when printing via the `.credanta-promo` rule below.
 

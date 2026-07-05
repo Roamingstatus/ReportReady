@@ -34,7 +34,23 @@ const API_PORT = Number(process.env.API_PORT || 3000);
 const ROOT =
   process.env.STATIC_DIR ||
   path.resolve(__dirname, '..', 'artifacts', 'reportready', 'dist', 'public');
-const BUY_ME_COFFEE_URL = process.env.VITE_BUY_ME_COFFEE_URL || '';
+const BUY_ME_COFFEE_PLACEHOLDER_URL = 'https://example.com/reportready-buy-me-a-coffee-placeholder';
+
+function safeExternalUrl(value, fallback) {
+  if (!value) return fallback;
+  try {
+    const url = new URL(value);
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return fallback;
+    return url.href;
+  } catch {
+    return fallback;
+  }
+}
+
+const BUY_ME_COFFEE_URL = safeExternalUrl(
+  process.env.VITE_BUY_ME_COFFEE_URL,
+  BUY_ME_COFFEE_PLACEHOLDER_URL,
+);
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
