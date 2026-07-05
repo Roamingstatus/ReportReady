@@ -28,5 +28,12 @@ The frontend is static (no build step here); serve `artifacts/shift-canvas/dist/
 
 A minimal Node-only (no dependencies) static + `/api` proxy server is sufficient. Example core flow to smoke-test end to end: open the homepage, click a template's "View & Print", then "Print Sheet"; and submit the floating "Feedback" form (this exercises the frontend → `/api/feedback` → filesystem path).
 
+### Single-service container (Railway)
+The `Dockerfile` builds one image that runs the whole app on a single public port via `scripts/start.mjs`, which supervises two processes:
+- the API on an internal port (`API_PORT`, default `3001`), and
+- `scripts/devserver.mjs` on the platform's `PORT` (Railway injects this), proxying `/api` to the API.
+
+If either process exits, the launcher exits non-zero so the platform restarts the service. Build/run locally: `docker build -t reportready . && docker run -e PORT=9090 -p 9090:9090 reportready` — then the UI and `/api/*` are both served on `:9090`.
+
 ### No lint/test/build
 There are no lint, test, or build commands in this repo — it holds pre-built artifacts only. Environment setup requires no dependency installation.
