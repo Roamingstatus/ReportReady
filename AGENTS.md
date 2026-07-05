@@ -6,7 +6,7 @@ ReportReady is a web app offering free, printable nurse report sheets. This repo
 
 ### What runs here
 - **`artifacts/api-server`** — Express API, shipped as a self-contained esbuild bundle (`dist/index.mjs`). Routes: `GET /api/healthz` and `POST /api/feedback`.
-- **`artifacts/shift-canvas`** — the React/Vite SPA frontend, shipped as pre-built static files in `dist/public/` (uses `wouter` for client-side routing).
+- **`artifacts/reportready`** — the React/Vite SPA frontend (formerly codenamed `shift-canvas`), shipped as pre-built static files in `dist/public/` (uses `wouter` for client-side routing).
 - **`artifacts/mockup-sandbox`** — no source in this repo (only symlinked `node_modules`); not runnable.
 
 ### Running the backend (api-server)
@@ -21,8 +21,8 @@ PORT=3000 NODE_ENV=production node dist/index.mjs
 - The bundle is fully self-contained; the committed `node_modules` are **broken pnpm symlinks** (they point at a non-existent root `node_modules/.pnpm` store) and are **not** needed to run.
 - `POST /api/feedback` writes JSON (and any screenshot) to a `feedback/` directory at the repo root (resolved as `artifacts/api-server/dist/../../..` = the workspace root). No database is used at runtime.
 
-### Running the frontend (shift-canvas)
-The frontend is static (no build step here); serve `artifacts/shift-canvas/dist/public/` with:
+### Running the frontend (reportready)
+The frontend is static (no build step here); serve `artifacts/reportready/dist/public/` with:
 - SPA fallback to `index.html` for unknown paths (client-side routing), and
 - a reverse proxy that forwards `/api/*` to the api-server (the app calls `/api/feedback` as a **same-origin relative URL**, so a plain static server alone will not reach the backend).
 
