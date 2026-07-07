@@ -2,8 +2,20 @@
 import cors from "cors";
 import express from "express";
 
+// src/lib/security-headers.ts
+function securityHeaders(_req, res, next) {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'self'; base-uri 'self'; frame-ancestors 'none'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'"
+  );
+  next();
+}
+
 // src/routes/index.ts
-import { Router as Router6 } from "express";
+import { Router as Router7 } from "express";
 
 // src/routes/analytics-admin.ts
 import { Router } from "express";
@@ -54,11 +66,11 @@ function hashIp(ip) {
 // src/lib/analytics-rate-limit.ts
 var eventBuckets = /* @__PURE__ */ new Map();
 var loginBuckets = /* @__PURE__ */ new Map();
-function checkRateLimit(buckets2, key, max, windowMs) {
+function checkRateLimit(buckets3, key, max, windowMs) {
   const now = Date.now();
-  const bucket = buckets2.get(key);
+  const bucket = buckets3.get(key);
   if (!bucket || now >= bucket.resetAt) {
-    buckets2.set(key, { count: 1, resetAt: now + windowMs });
+    buckets3.set(key, { count: 1, resetAt: now + windowMs });
     return true;
   }
   if (bucket.count >= max) {
@@ -430,7 +442,7 @@ function trafficByPage(events, limit = 12) {
     const pagePath = event.path || "/";
     counts.set(pagePath, (counts.get(pagePath) ?? 0) + 1);
   }
-  return [...counts.entries()].map(([path2, count]) => ({ path: path2, count })).sort((a, b) => b.count - a.count).slice(0, limit);
+  return [...counts.entries()].map(([path4, count]) => ({ path: path4, count })).sort((a, b) => b.count - a.count).slice(0, limit);
 }
 function buildGuestVisitors(events, limit = 100) {
   const byGuest = /* @__PURE__ */ new Map();
@@ -557,7 +569,7 @@ function escapeHtml(value) {
 }
 
 // src/routes/analytics-admin.ts
-var router = Router();
+var router2 = Router();
 function parseRange(value) {
   const range = typeof value === "string" ? value : "7d";
   return ANALYTICS_RANGES.has(range) ? range : "7d";
@@ -570,7 +582,7 @@ function redirectToAdminPath(res, error) {
 function redirectToHomepage(res) {
   res.redirect(302, "/");
 }
-router.get("/analytics/admin/config", (_req, res) => {
+router2.get("/analytics/admin/config", (_req, res) => {
   res.status(200).json({
     ok: true,
     adminPath: getAnalyticsAdminPath(),
@@ -578,7 +590,7 @@ router.get("/analytics/admin/config", (_req, res) => {
     authMethod: "google_pin"
   });
 });
-router.get("/analytics/admin/session", (req, res) => {
+router2.get("/analytics/admin/session", (req, res) => {
   const status = getAdminSessionStatus(req);
   if (status.accessDenied) {
     clearAllAdminCookies(res);
@@ -607,7 +619,7 @@ router.get("/analytics/admin/session", (req, res) => {
     email: status.email
   });
 });
-router.get("/analytics/admin/google/start", analyticsLoginRateLimit, (req, res) => {
+router2.get("/analytics/admin/google/start", analyticsLoginRateLimit, (req, res) => {
   if (!isAnalyticsAdminConfigured()) {
     redirectToHomepage(res);
     return;
@@ -622,7 +634,7 @@ router.get("/analytics/admin/google/start", analyticsLoginRateLimit, (req, res) 
     redirectToHomepage(res);
   }
 });
-router.get("/analytics/admin/google/callback", analyticsLoginRateLimit, async (req, res) => {
+router2.get("/analytics/admin/google/callback", analyticsLoginRateLimit, async (req, res) => {
   if (!isAnalyticsAdminConfigured()) {
     redirectToHomepage(res);
     return;
@@ -679,7 +691,7 @@ router.get("/analytics/admin/google/callback", analyticsLoginRateLimit, async (r
     redirectToHomepage(res);
   }
 });
-router.post("/analytics/admin/verify-pin", analyticsPinRateLimit, (req, res) => {
+router2.post("/analytics/admin/verify-pin", analyticsPinRateLimit, (req, res) => {
   const googleSession = getGoogleSessionFromRequest(req);
   if (!googleSession || !isEmailAllowed(googleSession.email)) {
     clearAllAdminCookies(res);
@@ -703,11 +715,11 @@ router.post("/analytics/admin/verify-pin", analyticsPinRateLimit, (req, res) => 
   });
   res.status(200).json({ ok: true, adminVerified: true });
 });
-router.post("/analytics/admin/logout", (_req, res) => {
+router2.post("/analytics/admin/logout", (_req, res) => {
   clearAllAdminCookies(res);
   res.status(200).json({ ok: true });
 });
-router.get("/analytics/admin/dashboard", async (req, res) => {
+router2.get("/analytics/admin/dashboard", async (req, res) => {
   if (!requireFullAdminAccess(req, res)) return;
   const range = parseRange(req.query.range);
   try {
@@ -721,7 +733,7 @@ router.get("/analytics/admin/dashboard", async (req, res) => {
     res.status(500).json({ ok: false, error: "Dashboard unavailable." });
   }
 });
-var analytics_admin_default = router;
+var analytics_admin_default = router2;
 
 // src/routes/analytics.ts
 import { Router as Router2 } from "express";
@@ -794,8 +806,8 @@ function validateAnalyticsEventBody(body) {
 }
 
 // src/routes/analytics.ts
-var router2 = Router2();
-router2.all("/analytics/event", (req, res, next) => {
+var router3 = Router2();
+router3.all("/analytics/event", (req, res, next) => {
   if (req.method === "POST") {
     next();
     return;
@@ -803,7 +815,7 @@ router2.all("/analytics/event", (req, res, next) => {
   res.set("Allow", "POST");
   res.status(405).json({ ok: false, error: "Method not allowed." });
 });
-router2.post("/analytics/event", analyticsEventRateLimit, async (req, res) => {
+router3.post("/analytics/event", analyticsEventRateLimit, async (req, res) => {
   const validation = validateAnalyticsEventBody(req.body);
   if (!validation.ok) {
     res.status(validation.status).json({ ok: false, error: validation.error });
@@ -831,15 +843,1805 @@ router2.post("/analytics/event", analyticsEventRateLimit, async (req, res) => {
     res.status(500).json({ ok: false, error: "Event could not be recorded." });
   }
 });
-var analytics_default = router2;
+var analytics_default = router3;
+
+// src/routes/breakroom-admin.ts
+import { Router as Router3 } from "express";
+
+// src/lib/breakroom-moderation-reasons.ts
+var BREAKROOM_MODERATION_REASONS = [
+  "Offensive content",
+  "Spam",
+  "PHI/privacy concern",
+  "Harassment",
+  "Unnecessary/off-topic",
+  "Duplicate",
+  "Other"
+];
+var BREAKROOM_MODERATION_DEFAULT_REASON = "Offensive content";
+function normalizeModerationReason(value) {
+  if (typeof value !== "string" || !value.trim()) {
+    return BREAKROOM_MODERATION_DEFAULT_REASON;
+  }
+  const trimmed = value.trim();
+  if (BREAKROOM_MODERATION_REASONS.includes(trimmed)) {
+    return trimmed;
+  }
+  return trimmed.slice(0, 200);
+}
+
+// src/lib/breakroom-origin.ts
+function getAllowedOrigins() {
+  const fromEnv = [
+    process.env.APP_ORIGIN,
+    process.env.PUBLIC_APP_URL,
+    process.env.CORS_ORIGIN
+  ].filter((value) => typeof value === "string" && value.trim().length > 0).flatMap((value) => value.split(",").map((part) => part.trim())).filter(Boolean);
+  if (fromEnv.length > 0) {
+    return [...new Set(fromEnv)];
+  }
+  if (process.env.NODE_ENV !== "production") {
+    return ["http://localhost:22838", "http://127.0.0.1:22838", "http://localhost:8080"];
+  }
+  return [];
+}
+function originMatchesAllowed(origin, allowed) {
+  try {
+    const originUrl = new URL(origin);
+    const allowedUrl = new URL(allowed);
+    return originUrl.origin === allowedUrl.origin;
+  } catch {
+    return origin === allowed;
+  }
+}
+function isSameOriginRequest(req) {
+  const allowedOrigins = getAllowedOrigins();
+  if (allowedOrigins.length === 0) {
+    return false;
+  }
+  const origin = typeof req.headers.origin === "string" ? req.headers.origin : "";
+  if (origin && allowedOrigins.some((allowed) => originMatchesAllowed(origin, allowed))) {
+    return true;
+  }
+  const referer = typeof req.headers.referer === "string" ? req.headers.referer : "";
+  if (referer) {
+    try {
+      const refererOrigin = new URL(referer).origin;
+      return allowedOrigins.some((allowed) => originMatchesAllowed(refererOrigin, allowed));
+    } catch {
+      return false;
+    }
+  }
+  return false;
+}
+function requireBreakroomMutationOrigin(req, res, next) {
+  if (isSameOriginRequest(req)) {
+    next();
+    return;
+  }
+  res.status(403).json({ ok: false, error: "Request origin is not allowed." });
+}
+
+// src/lib/breakroom-constants.ts
+var BREAKROOM_SESSION_COOKIE = "rr_breakroom_session";
+var BREAKROOM_SESSION_MS = 30 * 24 * 60 * 60 * 1e3;
+var BREAKROOM_POST_TITLE_MAX = 120;
+var BREAKROOM_POST_BODY_MIN = 2;
+var BREAKROOM_POST_BODY_MAX = 3e3;
+var BREAKROOM_COMMENT_BODY_MIN = 1;
+var BREAKROOM_COMMENT_BODY_MAX = 1e3;
+var BREAKROOM_NICKNAME_MAX = 40;
+var BREAKROOM_REPORT_AUTO_HIDE_THRESHOLD = 5;
+var BREAKROOM_REACTION_TYPES = ["like", "laugh", "support", "coffee"];
+var BREAKROOM_RATE_LIMITS = {
+  createPost: { windowMs: 15 * 60 * 1e3, max: 5 },
+  createComment: { windowMs: 15 * 60 * 1e3, max: 20 },
+  reaction: { windowMs: 15 * 60 * 1e3, max: 60 },
+  mutate: { windowMs: 15 * 60 * 1e3, max: 20 },
+  report: { windowMs: 15 * 60 * 1e3, max: 10 }
+};
+var BREAKROOM_ALLOWED_POST_KEYS = /* @__PURE__ */ new Set([
+  "title",
+  "body",
+  "nickname",
+  "anonymous",
+  "companyWebsite"
+]);
+var BREAKROOM_ALLOWED_COMMENT_KEYS = /* @__PURE__ */ new Set([
+  "body",
+  "nickname",
+  "anonymous",
+  "companyWebsite"
+]);
+var BREAKROOM_ALLOWED_EDIT_POST_KEYS = /* @__PURE__ */ new Set([
+  "title",
+  "body",
+  "companyWebsite"
+]);
+var BREAKROOM_ALLOWED_REACTION_KEYS = /* @__PURE__ */ new Set(["type", "companyWebsite"]);
+var BREAKROOM_PENDING_REVIEW_POST_MESSAGE = "Your post needs review before it can appear.";
+var BREAKROOM_PENDING_REVIEW_COMMENT_MESSAGE = "Your comment needs review before it can appear.";
+var OPENAI_MODERATION_MODEL = "omni-moderation-latest";
+
+// src/lib/breakroom-session.ts
+import crypto5 from "node:crypto";
+function getBreakroomSecret() {
+  return process.env.BREAKROOM_SECRET || process.env.ANALYTICS_SECRET || "dev-breakroom-secret";
+}
+function signPayload3(payload) {
+  return crypto5.createHmac("sha256", getBreakroomSecret()).update(payload).digest("base64url");
+}
+function verifySignedPayload2(token) {
+  if (!token) return null;
+  const [payload, signature] = token.split(".");
+  if (!payload || !signature) return null;
+  const expected = signPayload3(payload);
+  const provided = Buffer.from(signature);
+  const target = Buffer.from(expected);
+  if (provided.length !== target.length || !crypto5.timingSafeEqual(provided, target)) {
+    return null;
+  }
+  try {
+    const decoded = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
+    if (typeof decoded.guestId !== "string" || typeof decoded.csrf !== "string" || typeof decoded.exp !== "number" || decoded.exp <= Date.now()) {
+      return null;
+    }
+    return decoded;
+  } catch {
+    return null;
+  }
+}
+function createSessionToken(guestId, csrf) {
+  const payload = Buffer.from(
+    JSON.stringify({
+      guestId,
+      csrf,
+      exp: Date.now() + BREAKROOM_SESSION_MS
+    })
+  ).toString("base64url");
+  return `${payload}.${signPayload3(payload)}`;
+}
+function cookieParts2(value, maxAgeSeconds) {
+  const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
+  return `${BREAKROOM_SESSION_COOKIE}=${encodeURIComponent(value)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAgeSeconds}${secure}`;
+}
+function issueBreakroomSession(res) {
+  const guestId = crypto5.randomUUID();
+  const csrfToken = crypto5.randomBytes(24).toString("base64url");
+  const token = createSessionToken(guestId, csrfToken);
+  res.setHeader(
+    "Set-Cookie",
+    cookieParts2(token, Math.floor(BREAKROOM_SESSION_MS / 1e3))
+  );
+  return { guestId, csrfToken };
+}
+function getBreakroomSession(req) {
+  const header = req.headers.cookie;
+  if (!header) return null;
+  for (const part of header.split(";")) {
+    const [name, ...rest] = part.trim().split("=");
+    if (name === BREAKROOM_SESSION_COOKIE) {
+      const value = decodeURIComponent(rest.join("="));
+      return verifySignedPayload2(value);
+    }
+  }
+  return null;
+}
+function ensureBreakroomSession(req, res) {
+  const existing = getBreakroomSession(req);
+  if (existing) {
+    return { guestId: existing.guestId, csrfToken: existing.csrf };
+  }
+  return issueBreakroomSession(res);
+}
+function verifyBreakroomCsrf(req) {
+  const session = getBreakroomSession(req);
+  if (!session) return false;
+  const header = req.headers["x-csrf-token"];
+  if (typeof header !== "string" || header.length === 0) return false;
+  const provided = Buffer.from(header);
+  const expected = Buffer.from(session.csrf);
+  if (provided.length !== expected.length) return false;
+  return crypto5.timingSafeEqual(provided, expected);
+}
+function requireBreakroomGuest(req) {
+  return getBreakroomSession(req)?.guestId ?? null;
+}
+
+// src/lib/breakroom-rate-limit.ts
+var buckets = /* @__PURE__ */ new Map();
+function consume(key, windowMs, max) {
+  const now = Date.now();
+  const bucket = buckets.get(key);
+  if (!bucket || now >= bucket.resetAt) {
+    buckets.set(key, { count: 1, resetAt: now + windowMs });
+    return true;
+  }
+  if (bucket.count >= max) {
+    return false;
+  }
+  bucket.count += 1;
+  return true;
+}
+function rateLimitKey(req, action) {
+  const guestId = requireBreakroomGuest(req);
+  const ipHash = hashIp(getClientIp(req));
+  return `${action}:${guestId ?? "anon"}:${ipHash}`;
+}
+function createRateLimiter(action, config, message = "Too many attempts. Try again later.") {
+  return (req, res, next) => {
+    if (consume(rateLimitKey(req, action), config.windowMs, config.max)) {
+      next();
+      return;
+    }
+    res.status(429).json({ ok: false, error: message });
+  };
+}
+var breakroomCreatePostRateLimit = createRateLimiter(
+  "create-post",
+  BREAKROOM_RATE_LIMITS.createPost,
+  "Too many attempts. Try again later."
+);
+var breakroomCreateCommentRateLimit = createRateLimiter(
+  "create-comment",
+  BREAKROOM_RATE_LIMITS.createComment
+);
+var breakroomReactionRateLimit = createRateLimiter(
+  "reaction",
+  BREAKROOM_RATE_LIMITS.reaction
+);
+var breakroomMutateRateLimit = createRateLimiter(
+  "mutate",
+  BREAKROOM_RATE_LIMITS.mutate
+);
+var breakroomReportRateLimit = createRateLimiter(
+  "report",
+  BREAKROOM_RATE_LIMITS.report
+);
+
+// src/lib/breakroom-storage.ts
+import { randomUUID as randomUUID2 } from "node:crypto";
+import { mkdir as mkdir2, readFile as readFile2, writeFile } from "node:fs/promises";
+import path2 from "node:path";
+import { fileURLToPath as fileURLToPath2 } from "node:url";
+
+// src/lib/moderation/openai-moderation.ts
+function getOpenAIApiKey() {
+  const key = process.env.OPENAI_API_KEY?.trim();
+  return key && key.length > 0 ? key : null;
+}
+async function moderateTextWithOpenAI(text) {
+  const apiKey = getOpenAIApiKey();
+  if (!apiKey) {
+    console.warn("[moderation] OPENAI_API_KEY is not set; skipping OpenAI moderation.");
+    return null;
+  }
+  if (!text.trim()) {
+    return {
+      flagged: false,
+      categories: {},
+      categoryScores: {}
+    };
+  }
+  try {
+    const response = await fetch("https://api.openai.com/v1/moderations", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: OPENAI_MODERATION_MODEL,
+        input: text
+      })
+    });
+    if (!response.ok) {
+      console.error("[moderation] OpenAI moderation request failed", {
+        status: response.status
+      });
+      return null;
+    }
+    const data = await response.json();
+    const result = data.results?.[0];
+    if (!result) {
+      console.error("[moderation] OpenAI moderation returned no results.");
+      return null;
+    }
+    return {
+      flagged: Boolean(result.flagged),
+      categories: result.categories ?? {},
+      categoryScores: result.category_scores ?? {}
+    };
+  } catch (error) {
+    console.error("[moderation] OpenAI moderation error", {
+      reason: error instanceof Error ? error.message : "unknown"
+    });
+    return null;
+  }
+}
+
+// src/lib/moderation/phi-keywords.ts
+var PHI_REJECTION_MESSAGE = "Please do not share patient names, MRNs, dates of birth, room numbers, or protected health information.";
+var PHI_PATTERNS = [
+  /\b\d{3}-\d{2}-\d{4}\b/,
+  /\bmrn\s*[:#]?\s*\d+/i,
+  /\bmedical record (?:number|#|no\.?)/i,
+  /\bdate of birth\b/i,
+  /\bdob\s*[:/]\s*\d{1,2}/i,
+  /\bpatient\s+name\s*[:/]/i,
+  /\b(?:room|rm)\s*#?\s*\d{1,4}\b/i,
+  /\b\d{1,2}\/\d{1,2}\/\d{2,4}\b.*\b(?:dob|born)\b/i
+];
+function containsPhiKeywords(...fields) {
+  for (const field of fields) {
+    if (!field?.trim()) continue;
+    for (const pattern of PHI_PATTERNS) {
+      if (pattern.test(field)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+function rejectIfPhi(...fields) {
+  if (containsPhiKeywords(...fields)) {
+    return { ok: false, error: PHI_REJECTION_MESSAGE };
+  }
+  return { ok: true };
+}
+
+// src/lib/moderation/banned-words.ts
+var BANNED_WORDS = [
+  "fuck",
+  "fucking",
+  "fucker",
+  "motherfucker",
+  "fck",
+  "shit",
+  "bullshit",
+  "ass",
+  "asshole",
+  "bitch",
+  "bitches",
+  "bastard",
+  "damn",
+  "goddamn",
+  "crap",
+  "dick",
+  "cock",
+  "pussy",
+  "cunt",
+  "slut",
+  "whore",
+  "twat",
+  "prick",
+  "wanker",
+  "jackass",
+  "douche",
+  "douchebag",
+  "dipshit",
+  "retard",
+  "retarded",
+  "idiot",
+  "moron",
+  "stupid",
+  "loser",
+  "jerk",
+  "scumbag",
+  "pieceofshit",
+  "wtf",
+  "stfu",
+  "gtfo",
+  "lmfao"
+];
+var BANNED_WORDS_BY_LENGTH = [...BANNED_WORDS].sort((a, b) => b.length - a.length);
+
+// src/lib/moderation/normalize.ts
+var LEET_SUBSTITUTIONS = {
+  "0": "o",
+  "1": "i",
+  "3": "e",
+  "4": "a",
+  "5": "s",
+  "7": "t",
+  "@": "a",
+  $: "s",
+  "!": "i"
+};
+function applyLeetSubstitutions(text) {
+  return [...text.toLowerCase()].map((char) => LEET_SUBSTITUTIONS[char] ?? char).join("");
+}
+function collapseRepeatedLetters(text) {
+  return text.replace(/(.)\1{2,}/g, "$1");
+}
+function compactLetters(text) {
+  return applyLeetSubstitutions(text).replace(/[^a-z]/g, "");
+}
+function normalizeSpaced(text) {
+  return applyLeetSubstitutions(text).replace(/[^a-z]+/g, " ").trim().replace(/\s+/g, " ");
+}
+function normalizeForProfanity(text) {
+  return collapseRepeatedLetters(compactLetters(text.trim()));
+}
+function normalizeTokens(text) {
+  const spaced = normalizeSpaced(text);
+  if (!spaced) return [];
+  return spaced.split(" ").map((token) => normalizeForProfanity(token)).filter(Boolean);
+}
+
+// src/lib/moderation/profanity.ts
+var PROFANITY_REJECTION_MESSAGE = "Please keep Breakroom respectful.";
+var SHORT_WORD_MAX_LENGTH = 4;
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+function matchesShortBannedWord(text, normalizedBanned) {
+  const compact = normalizeForProfanity(text);
+  if (compact === normalizedBanned) {
+    return true;
+  }
+  const tokens = normalizeTokens(text);
+  if (tokens.some((token) => token === normalizedBanned)) {
+    return true;
+  }
+  const spaced = normalizeSpaced(text);
+  if (!spaced) {
+    return false;
+  }
+  const boundaryPattern = new RegExp(`(^|\\s)${escapeRegex(normalizedBanned)}(\\s|$)`);
+  if (boundaryPattern.test(spaced)) {
+    return true;
+  }
+  if (compact.length >= normalizedBanned.length + 2 && (compact.endsWith(normalizedBanned) || compact.startsWith(normalizedBanned))) {
+    return true;
+  }
+  return false;
+}
+function matchesLongBannedWord(compact, normalizedBanned) {
+  return compact.includes(normalizedBanned);
+}
+function findProfanity(text) {
+  if (!text.trim()) {
+    return null;
+  }
+  const compact = normalizeForProfanity(text);
+  for (const banned of BANNED_WORDS_BY_LENGTH) {
+    const normalizedBanned = normalizeForProfanity(banned);
+    if (!normalizedBanned) continue;
+    if (normalizedBanned.length <= SHORT_WORD_MAX_LENGTH) {
+      if (matchesShortBannedWord(text, normalizedBanned)) {
+        return banned;
+      }
+      continue;
+    }
+    if (matchesLongBannedWord(compact, normalizedBanned)) {
+      return banned;
+    }
+  }
+  return null;
+}
+function containsProfanity(text) {
+  return findProfanity(text) !== null;
+}
+function rejectIfProfane(...fields) {
+  for (const field of fields) {
+    if (!field) continue;
+    if (containsProfanity(field)) {
+      return { ok: false, error: PROFANITY_REJECTION_MESSAGE };
+    }
+  }
+  return { ok: true };
+}
+
+// src/lib/moderation/content-review.ts
+function createDefaultModeration(status = "published") {
+  return {
+    status,
+    moderationFlagged: false,
+    moderationCategories: {},
+    moderationScores: {},
+    reviewedByAdmin: false
+  };
+}
+function buildModerationFields(status, flagged, categories, scores) {
+  return {
+    status,
+    moderationFlagged: flagged,
+    moderationCategories: categories,
+    moderationScores: scores,
+    reviewedByAdmin: false
+  };
+}
+async function reviewBreakroomContent(...textFields) {
+  const phi = rejectIfPhi(...textFields);
+  if (!phi.ok) {
+    throw new ContentReviewError(phi.error, 400);
+  }
+  const profanity = rejectIfProfane(...textFields);
+  if (!profanity.ok) {
+    throw new ContentReviewError(profanity.error, 400);
+  }
+  const combined = textFields.filter((field) => field && field.trim()).join("\n");
+  const openAi = await moderateTextWithOpenAI(combined);
+  if (!openAi) {
+    return {
+      decision: "publish",
+      moderation: createDefaultModeration("published")
+    };
+  }
+  if (openAi.flagged) {
+    return {
+      decision: "pending_review",
+      moderation: buildModerationFields(
+        "pending_review",
+        true,
+        openAi.categories,
+        openAi.categoryScores
+      )
+    };
+  }
+  return {
+    decision: "publish",
+    moderation: buildModerationFields("published", false, openAi.categories, openAi.categoryScores)
+  };
+}
+var ContentReviewError = class extends Error {
+  status;
+  constructor(message, status = 400) {
+    super(message);
+    this.name = "ContentReviewError";
+    this.status = status;
+  }
+};
+
+// src/lib/breakroom-storage.ts
+var moduleDir2 = path2.dirname(fileURLToPath2(import.meta.url));
+function emptyReactions() {
+  return { like: 0, laugh: 0, support: 0, coffee: 0 };
+}
+function applyModerationFields(target, moderation) {
+  target.status = moderation.status;
+  target.moderationFlagged = moderation.moderationFlagged;
+  target.moderationCategories = moderation.moderationCategories;
+  target.moderationScores = moderation.moderationScores;
+  target.reviewedByAdmin = moderation.reviewedByAdmin;
+  target.reviewedAt = moderation.reviewedAt;
+}
+function normalizeComment(comment) {
+  const defaults = createDefaultModeration(comment.status ?? "published");
+  return {
+    ...comment,
+    status: comment.status ?? defaults.status,
+    moderationFlagged: comment.moderationFlagged ?? defaults.moderationFlagged,
+    moderationCategories: comment.moderationCategories ?? defaults.moderationCategories,
+    moderationScores: comment.moderationScores ?? defaults.moderationScores,
+    reviewedByAdmin: comment.reviewedByAdmin ?? defaults.reviewedByAdmin,
+    reviewedAt: comment.reviewedAt
+  };
+}
+function normalizePost(post) {
+  const defaults = createDefaultModeration(post.status ?? "published");
+  return {
+    ...post,
+    status: post.status ?? defaults.status,
+    moderationFlagged: post.moderationFlagged ?? defaults.moderationFlagged,
+    moderationCategories: post.moderationCategories ?? defaults.moderationCategories,
+    moderationScores: post.moderationScores ?? defaults.moderationScores,
+    reviewedByAdmin: post.reviewedByAdmin ?? defaults.reviewedByAdmin,
+    reviewedAt: post.reviewedAt,
+    comments: (post.comments ?? []).map(normalizeComment)
+  };
+}
+function isPubliclyVisible(record) {
+  return record.status === "published" && !record.isHidden;
+}
+function getStorePath() {
+  if (process.env.BREAKROOM_DATA_FILE) {
+    return process.env.BREAKROOM_DATA_FILE;
+  }
+  const repoRoot = path2.resolve(moduleDir2, "..", "..", "..");
+  return path2.join(repoRoot, "data", "breakroom.json");
+}
+async function readStore() {
+  const filePath = getStorePath();
+  try {
+    const raw = await readFile2(filePath, "utf8");
+    const parsed = JSON.parse(raw);
+    if (!parsed || !Array.isArray(parsed.posts)) {
+      return { posts: [] };
+    }
+    return { posts: parsed.posts.map((post) => normalizePost(post)) };
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      return { posts: [] };
+    }
+    throw error;
+  }
+}
+async function writeStore(store) {
+  const filePath = getStorePath();
+  await mkdir2(path2.dirname(filePath), { recursive: true });
+  await writeFile(filePath, `${JSON.stringify(store, null, 2)}
+`, "utf8");
+}
+function formatRelativeTime(iso) {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const minutes = Math.max(1, Math.floor(diffMs / 6e4));
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hr ago`;
+  const days = Math.floor(hours / 24);
+  return `${days} day${days === 1 ? "" : "s"} ago`;
+}
+function toPublicComment(comment, viewerGuestId) {
+  if (isPubliclyVisible(comment)) {
+    return {
+      id: comment.id,
+      postId: comment.postId,
+      nickname: comment.nickname,
+      body: comment.body,
+      timestamp: formatRelativeTime(comment.createdAt),
+      createdAt: comment.createdAt,
+      canDelete: viewerGuestId !== null && comment.guestId === viewerGuestId
+    };
+  }
+  if (comment.isHidden) {
+    return {
+      id: comment.id,
+      postId: comment.postId,
+      nickname: "Moderator",
+      body: "Comment removed by moderator",
+      timestamp: formatRelativeTime(comment.updatedAt),
+      createdAt: comment.createdAt,
+      canDelete: false,
+      removedByModerator: true
+    };
+  }
+  return null;
+}
+function toPublicPost(post, viewerGuestId) {
+  if (!isPubliclyVisible(post)) return null;
+  const userReaction = viewerGuestId ? post.reactionVotes[viewerGuestId] ?? null : null;
+  const visibleComments = post.comments.map((comment) => toPublicComment(comment, viewerGuestId)).filter((comment) => comment !== null);
+  return {
+    id: post.id,
+    nickname: post.nickname,
+    title: post.title,
+    content: post.body,
+    timestamp: formatRelativeTime(post.createdAt),
+    createdAt: post.createdAt,
+    reactions: { ...post.reactions },
+    commentCount: visibleComments.length,
+    comments: visibleComments,
+    canEdit: viewerGuestId !== null && post.guestId === viewerGuestId,
+    canDelete: viewerGuestId !== null && post.guestId === viewerGuestId,
+    userReaction
+  };
+}
+async function listPublicPosts(viewerGuestId) {
+  const store = await readStore();
+  return store.posts.map((post) => toPublicPost(post, viewerGuestId)).filter((post) => post !== null).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+async function createPost(input) {
+  const store = await readStore();
+  const now = (/* @__PURE__ */ new Date()).toISOString();
+  const post = {
+    id: randomUUID2(),
+    guestId: input.guestId,
+    nickname: input.nickname,
+    title: input.title,
+    body: input.body,
+    anonymous: input.anonymous,
+    createdAt: now,
+    updatedAt: now,
+    isHidden: false,
+    reportedCount: 0,
+    reactions: emptyReactions(),
+    reactionVotes: {},
+    comments: [],
+    ...createDefaultModeration()
+  };
+  applyModerationFields(post, input.moderation);
+  store.posts.unshift(post);
+  await writeStore(store);
+  const pendingReview = input.moderation.status === "pending_review";
+  return {
+    post: pendingReview ? null : toPublicPost(post, input.guestId),
+    pendingReview
+  };
+}
+async function editPost(postId, guestId, updates, moderation) {
+  const store = await readStore();
+  const post = store.posts.find((item) => item.id === postId);
+  if (!post) return "not_found";
+  if (post.guestId !== guestId) return "forbidden";
+  if (updates.title !== void 0) post.title = updates.title;
+  if (updates.body !== void 0) post.body = updates.body;
+  if (moderation) {
+    applyModerationFields(post, moderation);
+  }
+  post.updatedAt = (/* @__PURE__ */ new Date()).toISOString();
+  await writeStore(store);
+  if (post.status === "pending_review") {
+    return "pending_review";
+  }
+  return toPublicPost(post, guestId);
+}
+async function deletePost(postId, guestId, isAdmin) {
+  const store = await readStore();
+  const index = store.posts.findIndex((item) => item.id === postId);
+  if (index === -1) return "not_found";
+  const post = store.posts[index];
+  if (!isAdmin && post.guestId !== guestId) return "forbidden";
+  store.posts.splice(index, 1);
+  await writeStore(store);
+  return "ok";
+}
+async function createComment(input) {
+  const store = await readStore();
+  const post = store.posts.find((item) => item.id === input.postId);
+  if (!post || !isPubliclyVisible(post)) return "not_found";
+  const now = (/* @__PURE__ */ new Date()).toISOString();
+  const comment = {
+    id: randomUUID2(),
+    postId: input.postId,
+    guestId: input.guestId,
+    nickname: input.nickname,
+    body: input.body,
+    createdAt: now,
+    updatedAt: now,
+    isHidden: false,
+    reportedCount: 0,
+    ...createDefaultModeration()
+  };
+  applyModerationFields(comment, input.moderation);
+  post.comments.push(comment);
+  post.updatedAt = now;
+  await writeStore(store);
+  const pendingReview = input.moderation.status === "pending_review";
+  return {
+    comment: pendingReview ? null : toPublicComment(comment, input.guestId),
+    pendingReview
+  };
+}
+async function deleteComment(commentId, guestId, isAdmin) {
+  const store = await readStore();
+  for (const post of store.posts) {
+    const index = post.comments.findIndex((comment2) => comment2.id === commentId);
+    if (index === -1) continue;
+    const comment = post.comments[index];
+    if (!isAdmin && comment.guestId !== guestId) return "forbidden";
+    post.comments.splice(index, 1);
+    post.updatedAt = (/* @__PURE__ */ new Date()).toISOString();
+    await writeStore(store);
+    return "ok";
+  }
+  return "not_found";
+}
+async function setReaction(input) {
+  const store = await readStore();
+  const post = store.posts.find((item) => item.id === input.postId);
+  if (!post || !isPubliclyVisible(post)) return "not_found";
+  const previous = post.reactionVotes[input.guestId];
+  if (previous) {
+    post.reactions[previous] = Math.max(0, post.reactions[previous] - 1);
+  }
+  if (previous === input.type) {
+    delete post.reactionVotes[input.guestId];
+  } else {
+    post.reactionVotes[input.guestId] = input.type;
+    post.reactions[input.type] += 1;
+  }
+  post.updatedAt = (/* @__PURE__ */ new Date()).toISOString();
+  await writeStore(store);
+  return toPublicPost(post, input.guestId);
+}
+async function autoHideIfNeeded(reportedCount, isHidden) {
+  if (isHidden) return true;
+  return reportedCount >= BREAKROOM_REPORT_AUTO_HIDE_THRESHOLD;
+}
+async function reportPost(postId) {
+  const store = await readStore();
+  const post = store.posts.find((item) => item.id === postId);
+  if (!post) return "not_found";
+  post.reportedCount += 1;
+  if (await autoHideIfNeeded(post.reportedCount, post.isHidden)) {
+    post.isHidden = true;
+    post.hiddenReason = "auto-reported";
+  }
+  post.updatedAt = (/* @__PURE__ */ new Date()).toISOString();
+  await writeStore(store);
+  return "ok";
+}
+async function reportComment(commentId) {
+  const store = await readStore();
+  for (const post of store.posts) {
+    const comment = post.comments.find((item) => item.id === commentId);
+    if (!comment) continue;
+    comment.reportedCount += 1;
+    if (await autoHideIfNeeded(comment.reportedCount, comment.isHidden)) {
+      comment.isHidden = true;
+      comment.hiddenReason = "auto-reported";
+    }
+    comment.updatedAt = (/* @__PURE__ */ new Date()).toISOString();
+    post.updatedAt = comment.updatedAt;
+    await writeStore(store);
+    return "ok";
+  }
+  return "not_found";
+}
+async function adminHidePost(postId, reason, adminEmail) {
+  const store = await readStore();
+  const post = store.posts.find((item) => item.id === postId);
+  if (!post) return "not_found";
+  const now = (/* @__PURE__ */ new Date()).toISOString();
+  post.isHidden = true;
+  post.hiddenReason = reason;
+  post.hiddenBy = adminEmail;
+  post.hiddenAt = now;
+  post.updatedAt = now;
+  await writeStore(store);
+  return "ok";
+}
+async function adminHideComment(commentId, reason, adminEmail) {
+  const store = await readStore();
+  for (const post of store.posts) {
+    const comment = post.comments.find((item) => item.id === commentId);
+    if (!comment) continue;
+    const now = (/* @__PURE__ */ new Date()).toISOString();
+    comment.isHidden = true;
+    comment.hiddenReason = reason;
+    comment.hiddenBy = adminEmail;
+    comment.hiddenAt = now;
+    comment.updatedAt = now;
+    post.updatedAt = now;
+    await writeStore(store);
+    return "ok";
+  }
+  return "not_found";
+}
+async function adminRestorePost(postId) {
+  const store = await readStore();
+  const post = store.posts.find((item) => item.id === postId);
+  if (!post) return "not_found";
+  const now = (/* @__PURE__ */ new Date()).toISOString();
+  post.isHidden = false;
+  delete post.hiddenReason;
+  delete post.hiddenBy;
+  delete post.hiddenAt;
+  if (post.status === "rejected") {
+    post.status = "published";
+  }
+  post.updatedAt = now;
+  await writeStore(store);
+  return "ok";
+}
+async function adminRestoreComment(commentId) {
+  const store = await readStore();
+  for (const post of store.posts) {
+    const comment = post.comments.find((item) => item.id === commentId);
+    if (!comment) continue;
+    const now = (/* @__PURE__ */ new Date()).toISOString();
+    comment.isHidden = false;
+    delete comment.hiddenReason;
+    delete comment.hiddenBy;
+    delete comment.hiddenAt;
+    if (comment.status === "rejected") {
+      comment.status = "published";
+    }
+    comment.updatedAt = now;
+    post.updatedAt = now;
+    await writeStore(store);
+    return "ok";
+  }
+  return "not_found";
+}
+async function listAdminModerationContent() {
+  const store = await readStore();
+  const posts = store.posts.map((post) => ({
+    id: post.id,
+    guestId: post.guestId,
+    nickname: post.nickname,
+    title: post.title,
+    body: post.body,
+    createdAt: post.createdAt,
+    updatedAt: post.updatedAt,
+    isHidden: post.isHidden,
+    hiddenReason: post.hiddenReason,
+    hiddenBy: post.hiddenBy,
+    hiddenAt: post.hiddenAt,
+    reportedCount: post.reportedCount,
+    status: post.status,
+    moderationFlagged: post.moderationFlagged,
+    commentCount: post.comments.length
+  })).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const comments = [];
+  for (const post of store.posts) {
+    for (const comment of post.comments) {
+      comments.push({
+        id: comment.id,
+        postId: post.id,
+        guestId: comment.guestId,
+        nickname: comment.nickname,
+        body: comment.body,
+        createdAt: comment.createdAt,
+        updatedAt: comment.updatedAt,
+        isHidden: comment.isHidden,
+        hiddenReason: comment.hiddenReason,
+        hiddenBy: comment.hiddenBy,
+        hiddenAt: comment.hiddenAt,
+        reportedCount: comment.reportedCount,
+        status: comment.status,
+        moderationFlagged: comment.moderationFlagged
+      });
+    }
+  }
+  comments.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  return { posts, comments };
+}
+function applyAdminReview(record, decision, _reviewer) {
+  const now = (/* @__PURE__ */ new Date()).toISOString();
+  record.reviewedByAdmin = true;
+  record.reviewedAt = now;
+  record.updatedAt = now;
+  if (decision === "approve") {
+    record.status = "published";
+    record.isHidden = false;
+    return;
+  }
+  record.status = "rejected";
+  record.isHidden = true;
+  record.hiddenReason = "admin-rejected";
+}
+async function adminReviewPost(postId, decision, reviewer) {
+  const store = await readStore();
+  const post = store.posts.find((item) => item.id === postId);
+  if (!post) return "not_found";
+  applyAdminReview(post, decision, reviewer);
+  await writeStore(store);
+  return "ok";
+}
+async function adminReviewComment(commentId, decision, reviewer) {
+  const store = await readStore();
+  for (const post of store.posts) {
+    const comment = post.comments.find((item) => item.id === commentId);
+    if (!comment) continue;
+    applyAdminReview(comment, decision, reviewer);
+    post.updatedAt = comment.updatedAt;
+    await writeStore(store);
+    return "ok";
+  }
+  return "not_found";
+}
+async function listPendingModeration() {
+  const store = await readStore();
+  const posts = store.posts.filter((post) => post.status === "pending_review");
+  const comments = [];
+  for (const post of store.posts) {
+    for (const comment of post.comments) {
+      if (comment.status === "pending_review") {
+        comments.push({ postId: post.id, comment });
+      }
+    }
+  }
+  return { posts, comments };
+}
+async function seedBreakroomIfEmpty() {
+  const store = await readStore();
+  if (store.posts.length > 0) return;
+  const now = Date.now();
+  const seedPosts = [
+    {
+      nickname: "IVQueen03",
+      title: "",
+      body: 'Charge asked for a "quick update" and my brain served her a full TED talk with footnotes. She said "shorter" and I still went three more minutes. We are not the same species.',
+      anonymous: false,
+      isHidden: false,
+      reportedCount: 0,
+      reactions: { like: 18, laugh: 42, support: 9, coffee: 14 },
+      reactionVotes: {},
+      comments: []
+    },
+    {
+      nickname: "NightOwlRN",
+      title: "",
+      body: "0300 vibes: the hallway is quiet, the monitor is loud, and I am negotiating with a sandwich like it is a binding contract. At least coffee still loves me back.",
+      anonymous: false,
+      isHidden: false,
+      reportedCount: 0,
+      reactions: { like: 31, laugh: 27, support: 6, coffee: 5 },
+      reactionVotes: {},
+      comments: []
+    }
+  ];
+  store.posts = seedPosts.map((post, index) => {
+    const createdAt = new Date(now - (index + 1) * 36e5).toISOString();
+    return normalizePost({
+      id: randomUUID2(),
+      guestId: "seed",
+      createdAt,
+      updatedAt: createdAt,
+      ...post,
+      ...createDefaultModeration("published")
+    });
+  });
+  await writeStore(store);
+}
+
+// src/lib/breakroom-validation.ts
+import { z } from "zod";
+var MONGO_OPERATOR_PATTERN = /^\$/;
+function containsMongoOperators(value) {
+  if (value === null || typeof value !== "object") return false;
+  if (Array.isArray(value)) {
+    return value.some((item) => containsMongoOperators(item));
+  }
+  for (const [key, nested] of Object.entries(value)) {
+    if (MONGO_OPERATOR_PATTERN.test(key) || containsMongoOperators(nested)) {
+      return true;
+    }
+  }
+  return false;
+}
+function rejectUnexpectedKeys(record, allowed) {
+  for (const key of Object.keys(record)) {
+    if (!allowed.has(key)) {
+      return "Invalid request fields.";
+    }
+  }
+  return null;
+}
+function honeypotTriggered(record) {
+  return typeof record.companyWebsite === "string" && record.companyWebsite.trim().length > 0;
+}
+var nicknameSchema = z.string().max(BREAKROOM_NICKNAME_MAX).optional().transform((value) => value ? sanitizeText(value, BREAKROOM_NICKNAME_MAX) : "");
+var postBodySchema = z.string().min(BREAKROOM_POST_BODY_MIN, "Post body is required.").max(BREAKROOM_POST_BODY_MAX, "Post is too long.").transform((value) => sanitizeText(value, BREAKROOM_POST_BODY_MAX)).refine((value) => value.length >= BREAKROOM_POST_BODY_MIN, "Post body is required.");
+var commentBodySchema = z.string().min(BREAKROOM_COMMENT_BODY_MIN, "Comment is required.").max(BREAKROOM_COMMENT_BODY_MAX, "Comment is too long.").transform((value) => sanitizeText(value, BREAKROOM_COMMENT_BODY_MAX)).refine((value) => value.length >= BREAKROOM_COMMENT_BODY_MIN, "Comment is required.");
+function validateCreatePostBody(body) {
+  if (body === null || typeof body !== "object" || Array.isArray(body)) {
+    return { ok: false, error: "Invalid request body.", status: 400 };
+  }
+  if (containsMongoOperators(body)) {
+    return { ok: false, error: "Invalid request body.", status: 400 };
+  }
+  const record = body;
+  const unexpected = rejectUnexpectedKeys(record, BREAKROOM_ALLOWED_POST_KEYS);
+  if (unexpected) return { ok: false, error: unexpected, status: 400 };
+  if (honeypotTriggered(record)) {
+    return { ok: true, data: { title: "", body: "", nickname: "", anonymous: true }, isHoneypotTriggered: true };
+  }
+  const schema = z.object({
+    title: z.string().max(BREAKROOM_POST_TITLE_MAX, "Title is too long.").optional().transform((value) => value ? sanitizeText(value, BREAKROOM_POST_TITLE_MAX) : ""),
+    body: postBodySchema,
+    nickname: nicknameSchema,
+    anonymous: z.boolean().optional().default(false)
+  });
+  const parsed = schema.safeParse(record);
+  if (!parsed.success) {
+    const message = parsed.error.issues[0]?.message ?? "Invalid request body.";
+    return { ok: false, error: message, status: 400 };
+  }
+  const nickname = parsed.data.anonymous ? "Anonymous" : parsed.data.nickname || "Anonymous";
+  return {
+    ok: true,
+    data: {
+      title: parsed.data.title,
+      body: parsed.data.body,
+      nickname: sanitizeText(nickname, BREAKROOM_NICKNAME_MAX) || "Anonymous",
+      anonymous: parsed.data.anonymous
+    }
+  };
+}
+function validateEditPostBody(body) {
+  if (body === null || typeof body !== "object" || Array.isArray(body)) {
+    return { ok: false, error: "Invalid request body.", status: 400 };
+  }
+  if (containsMongoOperators(body)) {
+    return { ok: false, error: "Invalid request body.", status: 400 };
+  }
+  const record = body;
+  const unexpected = rejectUnexpectedKeys(record, BREAKROOM_ALLOWED_EDIT_POST_KEYS);
+  if (unexpected) return { ok: false, error: unexpected, status: 400 };
+  if (honeypotTriggered(record)) {
+    return { ok: true, data: {}, isHoneypotTriggered: true };
+  }
+  const schema = z.object({
+    title: z.string().max(BREAKROOM_POST_TITLE_MAX, "Title is too long.").optional().transform((value) => value ? sanitizeText(value, BREAKROOM_POST_TITLE_MAX) : void 0),
+    body: z.string().min(BREAKROOM_POST_BODY_MIN, "Post body is required.").max(BREAKROOM_POST_BODY_MAX, "Post is too long.").optional().transform((value) => value ? sanitizeText(value, BREAKROOM_POST_BODY_MAX) : void 0)
+  }).refine((value) => value.title !== void 0 || value.body !== void 0, {
+    message: "Nothing to update."
+  });
+  const parsed = schema.safeParse(record);
+  if (!parsed.success) {
+    const message = parsed.error.issues[0]?.message ?? "Invalid request body.";
+    return { ok: false, error: message, status: 400 };
+  }
+  if (parsed.data.body !== void 0 && parsed.data.body.length < BREAKROOM_POST_BODY_MIN) {
+    return { ok: false, error: "Post body is required.", status: 400 };
+  }
+  return { ok: true, data: parsed.data };
+}
+function validateCreateCommentBody(body) {
+  if (body === null || typeof body !== "object" || Array.isArray(body)) {
+    return { ok: false, error: "Invalid request body.", status: 400 };
+  }
+  if (containsMongoOperators(body)) {
+    return { ok: false, error: "Invalid request body.", status: 400 };
+  }
+  const record = body;
+  const unexpected = rejectUnexpectedKeys(record, BREAKROOM_ALLOWED_COMMENT_KEYS);
+  if (unexpected) return { ok: false, error: unexpected, status: 400 };
+  if (honeypotTriggered(record)) {
+    return { ok: true, data: { body: "", nickname: "", anonymous: true }, isHoneypotTriggered: true };
+  }
+  const schema = z.object({
+    body: commentBodySchema,
+    nickname: nicknameSchema,
+    anonymous: z.boolean().optional().default(false)
+  });
+  const parsed = schema.safeParse(record);
+  if (!parsed.success) {
+    const message = parsed.error.issues[0]?.message ?? "Invalid request body.";
+    return { ok: false, error: message, status: 400 };
+  }
+  const nickname = parsed.data.anonymous ? "Anonymous" : parsed.data.nickname || "Anonymous";
+  return {
+    ok: true,
+    data: {
+      body: parsed.data.body,
+      nickname: sanitizeText(nickname, BREAKROOM_NICKNAME_MAX) || "Anonymous",
+      anonymous: parsed.data.anonymous
+    }
+  };
+}
+function validateReactionBody(body) {
+  if (body === null || typeof body !== "object" || Array.isArray(body)) {
+    return { ok: false, error: "Invalid request body.", status: 400 };
+  }
+  if (containsMongoOperators(body)) {
+    return { ok: false, error: "Invalid request body.", status: 400 };
+  }
+  const record = body;
+  const unexpected = rejectUnexpectedKeys(record, BREAKROOM_ALLOWED_REACTION_KEYS);
+  if (unexpected) return { ok: false, error: unexpected, status: 400 };
+  if (honeypotTriggered(record)) {
+    return { ok: true, data: { type: "like" }, isHoneypotTriggered: true };
+  }
+  const schema = z.object({
+    type: z.enum(BREAKROOM_REACTION_TYPES, { message: "Invalid reaction type." })
+  });
+  const parsed = schema.safeParse(record);
+  if (!parsed.success) {
+    return { ok: false, error: "Invalid reaction type.", status: 400 };
+  }
+  return { ok: true, data: parsed.data };
+}
+var UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+function isValidBreakroomId(value) {
+  return UUID_PATTERN.test(value) || /^post-[a-z0-9-]+$/i.test(value) || /^comment-[a-z0-9-]+$/i.test(value);
+}
+
+// src/lib/moderation-log.ts
+import { randomUUID as randomUUID3 } from "node:crypto";
+import { appendFile as appendFile2, mkdir as mkdir3 } from "node:fs/promises";
+import path3 from "node:path";
+import { fileURLToPath as fileURLToPath3 } from "node:url";
+var moduleDir3 = path3.dirname(fileURLToPath3(import.meta.url));
+function getModerationLogPath() {
+  if (process.env.MODERATION_LOG_FILE) {
+    return process.env.MODERATION_LOG_FILE;
+  }
+  const repoRoot = path3.resolve(moduleDir3, "..", "..", "..");
+  return path3.join(repoRoot, "data", "moderation-logs.jsonl");
+}
+async function appendModerationLog(input) {
+  const record = {
+    id: randomUUID3(),
+    createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+    ...input
+  };
+  const filePath = getModerationLogPath();
+  await mkdir3(path3.dirname(filePath), { recursive: true });
+  await appendFile2(filePath, `${JSON.stringify(record)}
+`, "utf8");
+  return record;
+}
+
+// src/routes/breakroom-admin.ts
+var router4 = Router3();
+router4.use((req, res, next) => {
+  if (req.method === "GET") {
+    next();
+    return;
+  }
+  requireBreakroomMutationOrigin(req, res, (err) => {
+    if (err) {
+      next(err);
+      return;
+    }
+    breakroomMutateRateLimit(req, res, next);
+  });
+});
+async function runAdminAction(req, res, handler, log) {
+  const googleSession = requireFullAdminAccess(req, res);
+  if (!googleSession) return;
+  try {
+    const result = await handler(googleSession.email);
+    if (result === "not_found") {
+      res.status(404).json({ ok: false, error: "Content could not be found." });
+      return;
+    }
+    await appendModerationLog({
+      action: log.action,
+      targetType: log.targetType,
+      targetId: log.targetId,
+      adminEmail: googleSession.email,
+      reason: log.reason
+    });
+    res.status(200).json({ ok: true });
+  } catch (error) {
+    console.error("[breakroom] admin moderation action failed", {
+      action: log.action,
+      targetId: log.targetId,
+      reason: error instanceof Error ? error.message : "unknown"
+    });
+    res.status(500).json({ ok: false, error: "Moderation action failed." });
+  }
+}
+router4.get("/admin/breakroom/content", async (req, res) => {
+  if (!requireFullAdminAccess(req, res)) return;
+  try {
+    const content = await listAdminModerationContent();
+    res.status(200).json({ ok: true, ...content });
+  } catch (error) {
+    console.error("[breakroom] admin list content failed", {
+      reason: error instanceof Error ? error.message : "unknown"
+    });
+    res.status(500).json({ ok: false, error: "Breakroom content could not be loaded." });
+  }
+});
+router4.get("/admin/breakroom/pending", async (req, res) => {
+  if (!requireFullAdminAccess(req, res)) return;
+  try {
+    const pending = await listPendingModeration();
+    res.status(200).json({ ok: true, ...pending });
+  } catch (error) {
+    console.error("[breakroom] admin list pending failed", {
+      reason: error instanceof Error ? error.message : "unknown"
+    });
+    res.status(500).json({ ok: false, error: "Pending content could not be loaded." });
+  }
+});
+router4.post("/admin/breakroom/posts/:postId/hide", async (req, res) => {
+  const postId = req.params.postId;
+  if (!isValidBreakroomId(postId)) {
+    res.status(400).json({ ok: false, error: "Invalid request." });
+    return;
+  }
+  const reason = normalizeModerationReason(req.body?.reason);
+  await runAdminAction(
+    req,
+    res,
+    (adminEmail) => adminHidePost(postId, reason, adminEmail),
+    { action: "hide_post", targetType: "post", targetId: postId, reason }
+  );
+});
+router4.post("/admin/breakroom/posts/:postId/restore", async (req, res) => {
+  const postId = req.params.postId;
+  if (!isValidBreakroomId(postId)) {
+    res.status(400).json({ ok: false, error: "Invalid request." });
+    return;
+  }
+  await runAdminAction(
+    req,
+    res,
+    () => adminRestorePost(postId),
+    { action: "restore_post", targetType: "post", targetId: postId, reason: "restored" }
+  );
+});
+router4.delete("/admin/breakroom/posts/:postId", async (req, res) => {
+  const postId = req.params.postId;
+  if (!isValidBreakroomId(postId)) {
+    res.status(400).json({ ok: false, error: "Invalid request." });
+    return;
+  }
+  const googleSession = requireFullAdminAccess(req, res);
+  if (!googleSession) return;
+  const reason = normalizeModerationReason(req.body?.reason ?? "permanent delete");
+  try {
+    const result = await deletePost(postId, "admin", true);
+    if (result === "not_found") {
+      res.status(404).json({ ok: false, error: "Post could not be found." });
+      return;
+    }
+    await appendModerationLog({
+      action: "delete_post",
+      targetType: "post",
+      targetId: postId,
+      adminEmail: googleSession.email,
+      reason
+    });
+    res.status(200).json({ ok: true });
+  } catch (error) {
+    console.error("[breakroom] admin delete post failed", {
+      reason: error instanceof Error ? error.message : "unknown"
+    });
+    res.status(500).json({ ok: false, error: "Moderation action failed." });
+  }
+});
+router4.post("/admin/breakroom/comments/:commentId/hide", async (req, res) => {
+  const commentId = req.params.commentId;
+  if (!isValidBreakroomId(commentId)) {
+    res.status(400).json({ ok: false, error: "Invalid request." });
+    return;
+  }
+  const reason = normalizeModerationReason(req.body?.reason);
+  await runAdminAction(
+    req,
+    res,
+    (adminEmail) => adminHideComment(commentId, reason, adminEmail),
+    { action: "hide_comment", targetType: "comment", targetId: commentId, reason }
+  );
+});
+router4.post("/admin/breakroom/comments/:commentId/restore", async (req, res) => {
+  const commentId = req.params.commentId;
+  if (!isValidBreakroomId(commentId)) {
+    res.status(400).json({ ok: false, error: "Invalid request." });
+    return;
+  }
+  await runAdminAction(
+    req,
+    res,
+    () => adminRestoreComment(commentId),
+    { action: "restore_comment", targetType: "comment", targetId: commentId, reason: "restored" }
+  );
+});
+router4.delete("/admin/breakroom/comments/:commentId", async (req, res) => {
+  const commentId = req.params.commentId;
+  if (!isValidBreakroomId(commentId)) {
+    res.status(400).json({ ok: false, error: "Invalid request." });
+    return;
+  }
+  const googleSession = requireFullAdminAccess(req, res);
+  if (!googleSession) return;
+  const reason = normalizeModerationReason(req.body?.reason ?? "permanent delete");
+  try {
+    const result = await deleteComment(commentId, "admin", true);
+    if (result === "not_found") {
+      res.status(404).json({ ok: false, error: "Comment could not be found." });
+      return;
+    }
+    await appendModerationLog({
+      action: "delete_comment",
+      targetType: "comment",
+      targetId: commentId,
+      adminEmail: googleSession.email,
+      reason
+    });
+    res.status(200).json({ ok: true });
+  } catch (error) {
+    console.error("[breakroom] admin delete comment failed", {
+      reason: error instanceof Error ? error.message : "unknown"
+    });
+    res.status(500).json({ ok: false, error: "Moderation action failed." });
+  }
+});
+router4.post("/admin/breakroom/posts/:postId/review", async (req, res) => {
+  const postId = req.params.postId;
+  if (!isValidBreakroomId(postId)) {
+    res.status(400).json({ ok: false, error: "Invalid request." });
+    return;
+  }
+  const decision = req.body?.decision === "reject" ? "reject" : "approve";
+  const reason = decision === "reject" ? normalizeModerationReason(req.body?.reason) : "approved";
+  await runAdminAction(
+    req,
+    res,
+    (adminEmail) => adminReviewPost(postId, decision, adminEmail),
+    {
+      action: decision === "reject" ? "reject_post" : "approve_post",
+      targetType: "post",
+      targetId: postId,
+      reason
+    }
+  );
+});
+router4.post("/admin/breakroom/comments/:commentId/review", async (req, res) => {
+  const commentId = req.params.commentId;
+  if (!isValidBreakroomId(commentId)) {
+    res.status(400).json({ ok: false, error: "Invalid request." });
+    return;
+  }
+  const decision = req.body?.decision === "reject" ? "reject" : "approve";
+  const reason = decision === "reject" ? normalizeModerationReason(req.body?.reason) : "approved";
+  await runAdminAction(
+    req,
+    res,
+    (adminEmail) => adminReviewComment(commentId, decision, adminEmail),
+    {
+      action: decision === "reject" ? "reject_comment" : "approve_comment",
+      targetType: "comment",
+      targetId: commentId,
+      reason
+    }
+  );
+});
+var breakroom_admin_default = router4;
+
+// src/lib/breakroom-auth.ts
+function requireBreakroomCsrf(req, res, next) {
+  if (verifyBreakroomCsrf(req)) {
+    next();
+    return;
+  }
+  res.status(403).json({ ok: false, error: "Invalid security token." });
+}
+function requireBreakroomAuth(req, res, next) {
+  if (requireBreakroomGuest(req)) {
+    next();
+    return;
+  }
+  res.status(401).json({ ok: false, error: "You are not allowed to edit this." });
+}
+
+// src/routes/breakroom.ts
+var mutationGuards = [
+  requireBreakroomMutationOrigin,
+  requireBreakroomCsrf
+];
+function runGuards(handlers, req, res, next, index = 0) {
+  if (index >= handlers.length) {
+    next();
+    return;
+  }
+  handlers[index](req, res, (err) => {
+    if (err) {
+      next(err);
+      return;
+    }
+    runGuards(handlers, req, res, next, index + 1);
+  });
+}
+function withGuards(...handlers) {
+  return (req, res, next) => {
+    runGuards([...mutationGuards, ...handlers], req, res, next);
+  };
+}
+router.get("/breakroom/session", async (_req, res) => {
+  try {
+    await seedBreakroomIfEmpty();
+    const session = ensureBreakroomSession(_req, res);
+    res.status(200).json({
+      ok: true,
+      csrfToken: session.csrfToken,
+      guestId: session.guestId
+    });
+  } catch (error) {
+    console.error("[breakroom] session failed", {
+      reason: error instanceof Error ? error.message : "unknown"
+    });
+    res.status(500).json({ ok: false, error: "Session could not be started." });
+  }
+});
+router.get("/breakroom/posts", async (req, res) => {
+  try {
+    await seedBreakroomIfEmpty();
+    const viewerGuestId = getBreakroomSession(req)?.guestId ?? null;
+    const posts = await listPublicPosts(viewerGuestId);
+    res.status(200).json({ ok: true, posts });
+  } catch (error) {
+    console.error("[breakroom] list posts failed", {
+      reason: error instanceof Error ? error.message : "unknown"
+    });
+    res.status(500).json({ ok: false, error: "Posts could not be loaded." });
+  }
+});
+router.post(
+  "/breakroom/posts",
+  withGuards(requireBreakroomAuth, breakroomCreatePostRateLimit),
+  async (req, res) => {
+    const validation = validateCreatePostBody(req.body);
+    if (!validation.ok) {
+      res.status(validation.status).json({ ok: false, error: validation.error });
+      return;
+    }
+    if (validation.isHoneypotTriggered) {
+      res.status(200).json({ ok: true });
+      return;
+    }
+    const guestId = getBreakroomSession(req).guestId;
+    try {
+      const review = await reviewBreakroomContent(
+        validation.data.title,
+        validation.data.body,
+        validation.data.nickname
+      );
+      const result = await createPost({
+        guestId,
+        nickname: validation.data.nickname,
+        title: validation.data.title,
+        body: validation.data.body,
+        anonymous: validation.data.anonymous,
+        moderation: review.moderation
+      });
+      if (result.pendingReview) {
+        res.status(202).json({
+          ok: true,
+          pendingReview: true,
+          message: BREAKROOM_PENDING_REVIEW_POST_MESSAGE
+        });
+        return;
+      }
+      res.status(201).json({ ok: true, post: result.post });
+    } catch (error) {
+      if (error instanceof ContentReviewError) {
+        res.status(error.status).json({ ok: false, error: error.message });
+        return;
+      }
+      console.error("[breakroom] create post failed", {
+        reason: error instanceof Error ? error.message : "unknown"
+      });
+      res.status(500).json({ ok: false, error: "Post could not be submitted." });
+    }
+  }
+);
+router.patch(
+  "/breakroom/posts/:postId",
+  withGuards(requireBreakroomAuth, breakroomMutateRateLimit),
+  async (req, res) => {
+    const postId = req.params.postId;
+    if (!isValidBreakroomId(postId)) {
+      res.status(400).json({ ok: false, error: "Invalid request." });
+      return;
+    }
+    const validation = validateEditPostBody(req.body);
+    if (!validation.ok) {
+      res.status(validation.status).json({ ok: false, error: validation.error });
+      return;
+    }
+    if (validation.isHoneypotTriggered) {
+      res.status(200).json({ ok: true });
+      return;
+    }
+    const guestId = getBreakroomSession(req).guestId;
+    try {
+      const review = await reviewBreakroomContent(validation.data.title, validation.data.body);
+      const result = await editPost(postId, guestId, validation.data, review.moderation);
+      if (result === "not_found") {
+        res.status(404).json({ ok: false, error: "Post could not be found." });
+        return;
+      }
+      if (result === "forbidden") {
+        res.status(403).json({ ok: false, error: "You are not allowed to edit this." });
+        return;
+      }
+      if (result === "pending_review") {
+        res.status(202).json({
+          ok: true,
+          pendingReview: true,
+          message: BREAKROOM_PENDING_REVIEW_POST_MESSAGE
+        });
+        return;
+      }
+      res.status(200).json({ ok: true, post: result });
+    } catch (error) {
+      if (error instanceof ContentReviewError) {
+        res.status(error.status).json({ ok: false, error: error.message });
+        return;
+      }
+      console.error("[breakroom] edit post failed", {
+        reason: error instanceof Error ? error.message : "unknown"
+      });
+      res.status(500).json({ ok: false, error: "Post could not be updated." });
+    }
+  }
+);
+router.delete(
+  "/breakroom/posts/:postId",
+  withGuards(requireBreakroomAuth, breakroomMutateRateLimit),
+  async (req, res) => {
+    const postId = req.params.postId;
+    if (!isValidBreakroomId(postId)) {
+      res.status(400).json({ ok: false, error: "Invalid request." });
+      return;
+    }
+    const guestId = getBreakroomSession(req).guestId;
+    try {
+      const result = await deletePost(postId, guestId, false);
+      if (result === "not_found") {
+        res.status(404).json({ ok: false, error: "Post could not be found." });
+        return;
+      }
+      if (result === "forbidden") {
+        res.status(403).json({ ok: false, error: "You are not allowed to edit this." });
+        return;
+      }
+      res.status(200).json({ ok: true });
+    } catch (error) {
+      console.error("[breakroom] delete post failed", {
+        reason: error instanceof Error ? error.message : "unknown"
+      });
+      res.status(500).json({ ok: false, error: "Post could not be deleted." });
+    }
+  }
+);
+router.post(
+  "/breakroom/posts/:postId/comments",
+  withGuards(requireBreakroomAuth, breakroomCreateCommentRateLimit),
+  async (req, res) => {
+    const postId = req.params.postId;
+    if (!isValidBreakroomId(postId)) {
+      res.status(400).json({ ok: false, error: "Invalid request." });
+      return;
+    }
+    const validation = validateCreateCommentBody(req.body);
+    if (!validation.ok) {
+      res.status(validation.status).json({ ok: false, error: validation.error });
+      return;
+    }
+    if (validation.isHoneypotTriggered) {
+      res.status(200).json({ ok: true });
+      return;
+    }
+    const guestId = getBreakroomSession(req).guestId;
+    try {
+      const review = await reviewBreakroomContent(validation.data.body, validation.data.nickname);
+      const result = await createComment({
+        postId,
+        guestId,
+        nickname: validation.data.nickname,
+        body: validation.data.body,
+        moderation: review.moderation
+      });
+      if (result === "not_found") {
+        res.status(404).json({ ok: false, error: "Post could not be found." });
+        return;
+      }
+      if (result.pendingReview) {
+        res.status(202).json({
+          ok: true,
+          pendingReview: true,
+          message: BREAKROOM_PENDING_REVIEW_COMMENT_MESSAGE
+        });
+        return;
+      }
+      res.status(201).json({ ok: true, comment: result.comment });
+    } catch (error) {
+      if (error instanceof ContentReviewError) {
+        res.status(error.status).json({ ok: false, error: error.message });
+        return;
+      }
+      console.error("[breakroom] create comment failed", {
+        reason: error instanceof Error ? error.message : "unknown"
+      });
+      res.status(500).json({ ok: false, error: "Comment could not be submitted." });
+    }
+  }
+);
+router.delete(
+  "/breakroom/comments/:commentId",
+  withGuards(requireBreakroomAuth, breakroomMutateRateLimit),
+  async (req, res) => {
+    const commentId = req.params.commentId;
+    if (!isValidBreakroomId(commentId)) {
+      res.status(400).json({ ok: false, error: "Invalid request." });
+      return;
+    }
+    const guestId = getBreakroomSession(req).guestId;
+    try {
+      const result = await deleteComment(commentId, guestId, false);
+      if (result === "not_found") {
+        res.status(404).json({ ok: false, error: "Comment could not be found." });
+        return;
+      }
+      if (result === "forbidden") {
+        res.status(403).json({ ok: false, error: "You are not allowed to edit this." });
+        return;
+      }
+      res.status(200).json({ ok: true });
+    } catch (error) {
+      console.error("[breakroom] delete comment failed", {
+        reason: error instanceof Error ? error.message : "unknown"
+      });
+      res.status(500).json({ ok: false, error: "Comment could not be deleted." });
+    }
+  }
+);
+router.post(
+  "/breakroom/posts/:postId/reactions",
+  withGuards(requireBreakroomAuth, breakroomReactionRateLimit),
+  async (req, res) => {
+    const postId = req.params.postId;
+    if (!isValidBreakroomId(postId)) {
+      res.status(400).json({ ok: false, error: "Invalid request." });
+      return;
+    }
+    const validation = validateReactionBody(req.body);
+    if (!validation.ok) {
+      res.status(validation.status).json({ ok: false, error: validation.error });
+      return;
+    }
+    if (validation.isHoneypotTriggered) {
+      res.status(200).json({ ok: true });
+      return;
+    }
+    const guestId = getBreakroomSession(req).guestId;
+    try {
+      const post = await setReaction({
+        postId,
+        guestId,
+        type: validation.data.type
+      });
+      if (!post) {
+        res.status(404).json({ ok: false, error: "Post could not be found." });
+        return;
+      }
+      res.status(200).json({ ok: true, post });
+    } catch (error) {
+      console.error("[breakroom] reaction failed", {
+        reason: error instanceof Error ? error.message : "unknown"
+      });
+      res.status(500).json({ ok: false, error: "Reaction could not be saved." });
+    }
+  }
+);
+router.post(
+  "/breakroom/posts/:postId/report",
+  withGuards(requireBreakroomAuth, breakroomReportRateLimit),
+  async (req, res) => {
+    const postId = req.params.postId;
+    if (!isValidBreakroomId(postId)) {
+      res.status(400).json({ ok: false, error: "Invalid request." });
+      return;
+    }
+    try {
+      const result = await reportPost(postId);
+      if (result === "not_found") {
+        res.status(404).json({ ok: false, error: "Post could not be found." });
+        return;
+      }
+      res.status(200).json({ ok: true });
+    } catch (error) {
+      console.error("[breakroom] report post failed", {
+        reason: error instanceof Error ? error.message : "unknown"
+      });
+      res.status(500).json({ ok: false, error: "Report could not be submitted." });
+    }
+  }
+);
+router.post(
+  "/breakroom/comments/:commentId/report",
+  withGuards(requireBreakroomAuth, breakroomReportRateLimit),
+  async (req, res) => {
+    const commentId = req.params.commentId;
+    if (!isValidBreakroomId(commentId)) {
+      res.status(400).json({ ok: false, error: "Invalid request." });
+      return;
+    }
+    try {
+      const result = await reportComment(commentId);
+      if (result === "not_found") {
+        res.status(404).json({ ok: false, error: "Comment could not be found." });
+        return;
+      }
+      res.status(200).json({ ok: true });
+    } catch (error) {
+      console.error("[breakroom] report comment failed", {
+        reason: error instanceof Error ? error.message : "unknown"
+      });
+      res.status(500).json({ ok: false, error: "Report could not be submitted." });
+    }
+  }
+);
+var breakroom_default = router;
 
 // src/routes/feedback.ts
-import { Router as Router3 } from "express";
+import { Router as Router4 } from "express";
 
 // src/lib/feedback-rate-limit.ts
 var WINDOW_MS = 15 * 60 * 1e3;
 var MAX_REQUESTS = 5;
-var buckets = /* @__PURE__ */ new Map();
+var buckets2 = /* @__PURE__ */ new Map();
 function getClientIp2(req) {
   const forwarded = req.headers["x-forwarded-for"];
   if (typeof forwarded === "string" && forwarded.length > 0) {
@@ -850,9 +2652,9 @@ function getClientIp2(req) {
 function feedbackRateLimit(req, res, next) {
   const ip = getClientIp2(req);
   const now = Date.now();
-  const bucket = buckets.get(ip);
+  const bucket = buckets2.get(ip);
   if (!bucket || now >= bucket.resetAt) {
-    buckets.set(ip, { count: 1, resetAt: now + WINDOW_MS });
+    buckets2.set(ip, { count: 1, resetAt: now + WINDOW_MS });
     next();
     return;
   }
@@ -1086,8 +2888,8 @@ async function sendFeedbackEmail(input) {
 }
 
 // src/routes/feedback.ts
-var router3 = Router3();
-router3.all("/feedback", (req, res, next) => {
+var router5 = Router4();
+router5.all("/feedback", (req, res, next) => {
   if (req.method === "POST") {
     next();
     return;
@@ -1095,7 +2897,7 @@ router3.all("/feedback", (req, res, next) => {
   res.set("Allow", "POST");
   res.status(405).json({ ok: false, error: "Method not allowed." });
 });
-router3.post("/feedback", feedbackRateLimit, async (req, res) => {
+router5.post("/feedback", feedbackRateLimit, async (req, res) => {
   const validation = validateFeedbackBody(req.body);
   if (!validation.ok) {
     res.status(validation.status).json({ ok: false, error: validation.error });
@@ -1144,24 +2946,24 @@ router3.post("/feedback", feedbackRateLimit, async (req, res) => {
     });
   }
 });
-var feedback_default = router3;
+var feedback_default = router5;
 
 // src/routes/health.ts
-import { Router as Router4 } from "express";
-var router4 = Router4();
-router4.get("/healthz", (_req, res) => {
+import { Router as Router5 } from "express";
+var router6 = Router5();
+router6.get("/healthz", (_req, res) => {
   res.json({ status: "ok" });
 });
-var health_default = router4;
+var health_default = router6;
 
 // src/routes/test-email.ts
-import { Router as Router5 } from "express";
-var router5 = Router5();
+import { Router as Router6 } from "express";
+var router7 = Router6();
 var TEST_FROM = "support@nexusgarden.live";
 var TEST_TO = "support@nexusgarden.live";
 var TEST_SUBJECT = "ReportReady Email Test";
 var TEST_BODY = "If you received this email, Resend is configured correctly.";
-router5.post("/test-email", feedbackRateLimit, async (_req, res) => {
+router7.post("/test-email", feedbackRateLimit, async (_req, res) => {
   const resend = getResendClient();
   if (!resend) {
     res.status(500).json({ ok: false, error: "Email delivery is not configured." });
@@ -1187,23 +2989,26 @@ router5.post("/test-email", feedbackRateLimit, async (_req, res) => {
     });
   }
 });
-var test_email_default = router5;
+var test_email_default = router7;
 
 // src/routes/index.ts
-var router6 = Router6();
-router6.use(health_default);
-router6.use(feedback_default);
-router6.use(test_email_default);
-router6.use(analytics_default);
-router6.use(analytics_admin_default);
-var routes_default = router6;
+var router8 = Router7();
+router8.use(health_default);
+router8.use(feedback_default);
+router8.use(test_email_default);
+router8.use(analytics_default);
+router8.use(analytics_admin_default);
+router8.use(breakroom_default);
+router8.use(breakroom_admin_default);
+var routes_default = router8;
 
 // src/app.ts
 var app = express();
 var corsOrigins = process.env.CORS_ORIGIN?.split(",").map((value) => value.trim()).filter(Boolean);
+app.use(securityHeaders);
 app.use(
   cors(
-    corsOrigins && corsOrigins.length > 0 ? { origin: corsOrigins, methods: ["GET", "POST"] } : { origin: false }
+    corsOrigins && corsOrigins.length > 0 ? { origin: corsOrigins, methods: ["GET", "POST", "PATCH", "DELETE"], credentials: true } : { origin: false }
   )
 );
 app.use(express.json({ limit: "100kb" }));

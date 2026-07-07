@@ -6,3 +6,4 @@ node_modules/
 
 # Anonymous analytics event log (beta storage)
 data/analytics-events.jsonl
+data/breakroom.json

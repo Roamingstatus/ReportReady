@@ -1,6 +1,8 @@
 import { Router } from "express";
 import analyticsAdminRouter from "./analytics-admin.js";
 import analyticsRouter from "./analytics.js";
+import breakroomAdminRouter from "./breakroom-admin.js";
+import breakroomRouter from "./breakroom.js";
 import feedbackRouter from "./feedback.js";
 import healthRouter from "./health.js";
 import testEmailRouter from "./test-email.js";
@@ -12,5 +14,7 @@ router.use(feedbackRouter);
 router.use(testEmailRouter);
 router.use(analyticsRouter);
 router.use(analyticsAdminRouter);
+router.use(breakroomRouter);
+router.use(breakroomAdminRouter);
 
 export default router;

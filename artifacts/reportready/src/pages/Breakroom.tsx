@@ -1,25 +1,39 @@
-import { useEffect, useMemo } from "react";
-import {
-  BREAKROOM_MOCK_POSTS,
-  getBreakroomFeedPosts,
-} from "@/data/breakroom-mock-posts";
+import { useCallback, useEffect, useState } from "react";
 import { BreakroomComposer } from "@/components/Breakroom/BreakroomComposer";
 import { BreakroomPostCard } from "@/components/Breakroom/BreakroomPostCard";
 import { BreakroomRules } from "@/components/Breakroom/BreakroomRules";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { FeedbackButton } from "@/components/feedback/FeedbackButton";
+import type { BreakroomPost } from "@/lib/breakroom-types";
 import { trackEvent, trackPageView } from "@/lib/analytics";
+import {
+  fetchBreakroomPosts,
+  initBreakroomSession,
+} from "@/services/breakroomService";
 
 export default function Breakroom() {
-  const feedPosts = useMemo(
-    () => getBreakroomFeedPosts(BREAKROOM_MOCK_POSTS),
-    [],
-  );
+  const [posts, setPosts] = useState<BreakroomPost[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const loadPosts = useCallback(async () => {
+    setLoadError(null);
+    try {
+      await initBreakroomSession();
+      const nextPosts = await fetchBreakroomPosts();
+      setPosts(nextPosts);
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : "Posts could not be loaded.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     trackPageView("/breakroom");
     trackEvent("breakroom_visit");
-  }, []);
+    void loadPosts();
+  }, [loadPosts]);
 
   return (
     <div className="breakroom-lounge-bg min-h-screen">
@@ -45,15 +59,23 @@ export default function Breakroom() {
               </h1>
             </section>
 
-            <BreakroomComposer />
+            <BreakroomComposer onPosted={() => void loadPosts()} />
 
             <section className="space-y-4" aria-label="Main feed">
               <h2 className="text-sm font-semibold uppercase tracking-wide text-[#8B6914]">
                 Main feed
               </h2>
-              {feedPosts.map((post) => (
-                <BreakroomPostCard key={post.id} post={post} />
-              ))}
+              {isLoading ? (
+                <p className="text-sm text-[#6B6B6B]">Loading lounge posts…</p>
+              ) : loadError ? (
+                <p className="text-sm text-red-600">{loadError}</p>
+              ) : posts.length === 0 ? (
+                <p className="text-sm text-[#6B6B6B]">No posts yet. Be the first to share.</p>
+              ) : (
+                posts.map((post) => (
+                  <BreakroomPostCard key={post.id} post={post} onChanged={() => void loadPosts()} />
+                ))
+              )}
             </section>
           </div>
 

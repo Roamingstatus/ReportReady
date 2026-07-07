@@ -11,6 +11,7 @@ import {
   type AnalyticsRange,
 } from "@/services/analyticsAdminService";
 import { cn } from "@/lib/utils";
+import { BreakroomModerationPanel } from "@/pages/BreakroomModerationPanel";
 
 const RANGE_OPTIONS: Array<{ value: AnalyticsRange; label: string }> = [
   { value: "today", label: "Today" },
@@ -131,10 +132,14 @@ function PinPanel({ onVerified }: { onVerified: () => void }) {
   );
 }
 
+type AdminTab = "analytics" | "breakroom";
+
 function DashboardPanel({
   dashboard,
   range,
   adminEmail,
+  activeTab,
+  onTabChange,
   onRangeChange,
   onLogout,
   isLoading,
@@ -142,6 +147,8 @@ function DashboardPanel({
   dashboard: AnalyticsDashboard;
   range: AnalyticsRange;
   adminEmail?: string;
+  activeTab: AdminTab;
+  onTabChange: (tab: AdminTab) => void;
   onRangeChange: (range: AnalyticsRange) => void;
   onLogout: () => void;
   isLoading: boolean;
@@ -151,7 +158,7 @@ function DashboardPanel({
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4">
           <div>
-            <h1 className="text-xl font-semibold text-slate-900">ReportReady Analytics</h1>
+            <h1 className="text-xl font-semibold text-slate-900">ReportReady Admin</h1>
             <p className="text-sm text-slate-500">
               Anonymous usage only. No PHI collected.
               {adminEmail ? ` Signed in as ${adminEmail}.` : null}
@@ -161,9 +168,39 @@ function DashboardPanel({
             Log out
           </Button>
         </div>
+        <div className="mx-auto flex max-w-7xl gap-2 px-4 pb-4">
+          <button
+            type="button"
+            onClick={() => onTabChange("analytics")}
+            className={cn(
+              "rounded-full px-4 py-2 text-sm font-medium transition-colors",
+              activeTab === "analytics"
+                ? "bg-teal-600 text-white"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200",
+            )}
+          >
+            Analytics
+          </button>
+          <button
+            type="button"
+            onClick={() => onTabChange("breakroom")}
+            className={cn(
+              "rounded-full px-4 py-2 text-sm font-medium transition-colors",
+              activeTab === "breakroom"
+                ? "bg-teal-600 text-white"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200",
+            )}
+          >
+            Breakroom Moderation
+          </button>
+        </div>
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-6">
+        {activeTab === "breakroom" ? (
+          <BreakroomModerationPanel />
+        ) : (
+          <>
         <div className="flex flex-wrap gap-2">
           {RANGE_OPTIONS.map((option) => (
             <button
@@ -382,6 +419,8 @@ function DashboardPanel({
             </div>
           </div>
         </section>
+          </>
+        )}
       </main>
     </div>
   );
@@ -389,6 +428,7 @@ function DashboardPanel({
 
 export default function AnalyticsAdmin() {
   const [session, setSession] = useState<AdminSessionState | null>(null);
+  const [activeTab, setActiveTab] = useState<AdminTab>("analytics");
   const [range, setRange] = useState<AnalyticsRange>("7d");
   const [dashboard, setDashboard] = useState<AnalyticsDashboard | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -417,9 +457,9 @@ export default function AnalyticsAdmin() {
   }, [refreshSession]);
 
   useEffect(() => {
-    if (!session?.adminVerified) return;
+    if (!session?.adminVerified || activeTab !== "analytics") return;
     void loadDashboard(range);
-  }, [session?.adminVerified, range, loadDashboard]);
+  }, [session?.adminVerified, activeTab, range, loadDashboard]);
 
   if (session === null) {
     return (
@@ -441,7 +481,7 @@ export default function AnalyticsAdmin() {
     return <PinPanel onVerified={() => void refreshSession()} />;
   }
 
-  if (!dashboard) {
+  if (activeTab === "analytics" && !dashboard) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 text-sm text-slate-500">
         Loading dashboard…
@@ -451,9 +491,38 @@ export default function AnalyticsAdmin() {
 
   return (
     <DashboardPanel
-      dashboard={dashboard}
+      dashboard={
+        dashboard ?? {
+          range,
+          cards: {
+            totalVisits: 0,
+            uniqueGuests: 0,
+            visitsToday: 0,
+            templateViews: 0,
+            printClicks: 0,
+            feedbackOpens: 0,
+            feedbackSubmissions: 0,
+            buyMeCoffeeClicks: 0,
+            credantaClicks: 0,
+            comingSoonClicks: 0,
+            breakroomVisits: 0,
+          },
+          topTemplatesViewed: [],
+          topPrintedTemplates: [],
+          recentEvents: [],
+          trafficByPage: [],
+          guestVisitors: [],
+        }
+      }
       range={range}
       adminEmail={session.email}
+      activeTab={activeTab}
+      onTabChange={(tab) => {
+        setActiveTab(tab);
+        if (tab === "analytics" && !dashboard) {
+          void loadDashboard(range);
+        }
+      }}
       onRangeChange={(nextRange) => {
         setRange(nextRange);
         void loadDashboard(nextRange);

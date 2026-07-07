@@ -1,15 +1,18 @@
 import cors from "cors";
 import express, { type Request, type Response, type NextFunction } from "express";
+import { securityHeaders } from "./lib/security-headers.js";
 import routes from "./routes/index.js";
 
 const app = express();
 
 const corsOrigins = process.env.CORS_ORIGIN?.split(",").map((value) => value.trim()).filter(Boolean);
 
+app.use(securityHeaders);
+
 app.use(
   cors(
     corsOrigins && corsOrigins.length > 0
-      ? { origin: corsOrigins, methods: ["GET", "POST"] }
+      ? { origin: corsOrigins, methods: ["GET", "POST", "PATCH", "DELETE"], credentials: true }
       : { origin: false },
   ),
 );
