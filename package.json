@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "bash run-dev.sh",
     "start": "bash run-prod-local.sh",
-    "build": "cd artifacts/api-server && npm run build && cd ../reportready && npm run build",
+    "build": "bash scripts/build-all.sh",
     "typecheck": "cd artifacts/reportready && npm run typecheck",
     "install:frontend": "cd artifacts/reportready && npm install"
   },

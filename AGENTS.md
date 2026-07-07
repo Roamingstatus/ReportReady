@@ -63,6 +63,14 @@ PORT=3001 NODE_ENV=production node dist/index.mjs
 
 ## Build / typecheck
 
+Requires **Node.js 18+** (Node 20 LTS recommended for production/Railway).
+
+```bash
+npm run build
+```
+
+Or per workspace:
+
 ```bash
 cd artifacts/api-server && npm run build
 cd artifacts/reportready

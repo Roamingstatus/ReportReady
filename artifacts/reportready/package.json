@@ -24,15 +24,16 @@
     "wouter": "^3.7.0"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.3.0",
+    "@tailwindcss/vite": "4.1.18",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^4.5.2",
-    "tailwindcss": "^4.3.0",
+    "tailwindcss": "4.1.18",
     "typescript": "^5.9.3",
     "vite": "^6.3.5"
   },
   "overrides": {
-    "vite": "^6.3.5"
+    "vite": "^6.3.5",
+    "@tailwindcss/oxide": "4.1.18"
   }
 }
