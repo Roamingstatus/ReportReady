@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -12,6 +12,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import {
   FEEDBACK_FEATURE_AREAS,
+  FEEDBACK_MESSAGE_MAX_LENGTH,
+  FEEDBACK_MESSAGE_MIN_LENGTH,
   FEEDBACK_SEVERITIES,
   FEEDBACK_TYPES,
   type FeedbackFeatureArea,
@@ -19,8 +21,9 @@ import {
   type FeedbackType,
 } from "@/api/feedback";
 import { submitFeedback } from "@/services/feedbackService";
+import { trackEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
-import { ImagePlus, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 export interface FeedbackFormProps {
   onSuccess: () => void;
@@ -28,27 +31,29 @@ export interface FeedbackFormProps {
 }
 
 export function FeedbackForm({ onSuccess, onCancel }: FeedbackFormProps) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [type, setType] = useState<FeedbackType>("General Feedback");
   const [featureArea, setFeatureArea] = useState<FeedbackFeatureArea>("Homepage");
   const [severity, setSeverity] = useState<FeedbackSeverity>("Medium");
   const [message, setMessage] = useState("");
-  const [screenshot, setScreenshot] = useState<File | null>(null);
+  const [companyWebsite, setCompanyWebsite] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleScreenshotChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0] ?? null;
-    setScreenshot(file);
-    setError(null);
-  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
 
-    if (!message.trim()) {
+    const trimmedMessage = message.trim();
+    if (!trimmedMessage) {
       setError("Message is required.");
+      return;
+    }
+    if (trimmedMessage.length < FEEDBACK_MESSAGE_MIN_LENGTH) {
+      setError("Message must be at least 5 characters.");
+      return;
+    }
+    if (trimmedMessage.length > FEEDBACK_MESSAGE_MAX_LENGTH) {
+      setError("Message is too long.");
       return;
     }
 
@@ -58,19 +63,37 @@ export function FeedbackForm({ onSuccess, onCancel }: FeedbackFormProps) {
         type,
         featureArea,
         severity,
-        message,
-        screenshot,
+        message: trimmedMessage,
+        companyWebsite,
       });
+      trackEvent("feedback_submit");
       onSuccess();
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Unable to send feedback.");
+      setError(
+        submitError instanceof Error
+          ? submitError.message
+          : "Feedback could not be sent. Please try again.",
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <form className="space-y-5" onSubmit={handleSubmit} noValidate>
+    <form className="relative space-y-5" onSubmit={handleSubmit} noValidate>
+      <div className="absolute -left-[9999px] h-px w-px overflow-hidden" aria-hidden="true">
+        <label htmlFor="feedback-company-website">Company website</label>
+        <input
+          id="feedback-company-website"
+          name="companyWebsite"
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+          value={companyWebsite}
+          onChange={(event) => setCompanyWebsite(event.target.value)}
+        />
+      </div>
+
       <div className="space-y-2">
         <Label htmlFor="feedback-type">Type</Label>
         <Select value={type} onValueChange={(value) => setType(value as FeedbackType)}>
@@ -122,6 +145,8 @@ export function FeedbackForm({ onSuccess, onCancel }: FeedbackFormProps) {
         </RadioGroup>
       </fieldset>
 
+      <p className="text-xs text-slate-500">Please do not include patient information.</p>
+
       <div className="space-y-2">
         <Label htmlFor="feedback-message">
           Message <span className="text-red-600">*</span>
@@ -133,34 +158,23 @@ export function FeedbackForm({ onSuccess, onCancel }: FeedbackFormProps) {
           onChange={(event) => setMessage(event.target.value)}
           placeholder="Tell us what you think..."
           rows={5}
+          maxLength={FEEDBACK_MESSAGE_MAX_LENGTH}
           aria-required="true"
         />
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="feedback-screenshot">Attach Screenshot (optional)</Label>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <Button
-            type="button"
-            variant="outline"
-            className="justify-start border-slate-200 text-slate-700 hover:bg-slate-50"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <ImagePlus className="h-4 w-4" />
-            Choose file
-          </Button>
-          <span className="truncate text-sm text-slate-500">
-            {screenshot?.name ?? "PNG, JPG, JPEG, or WEBP"}
-          </span>
-        </div>
-        <input
-          ref={fileInputRef}
+        <p className="text-sm text-slate-500">Screenshot uploads are temporarily unavailable.</p>
+        <Button
           id="feedback-screenshot"
-          type="file"
-          accept="image/png,image/jpeg,image/jpg,image/webp"
-          className="sr-only"
-          onChange={handleScreenshotChange}
-        />
+          type="button"
+          variant="outline"
+          disabled
+          className="justify-start border-slate-200 text-slate-400"
+        >
+          Choose file
+        </Button>
       </div>
 
       {error && (

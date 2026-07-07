@@ -87,6 +87,7 @@ function proxyApi(req, res) {
 function serveRuntimeConfig(res) {
   const config = {
     buyMeCoffeeUrl: BUY_ME_COFFEE_URL,
+    analyticsAdminPath: process.env.ANALYTICS_ADMIN_PATH || '/garden-room-9274',
   };
   res.writeHead(200, {
     'content-type': 'text/javascript; charset=utf-8',

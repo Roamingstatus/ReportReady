@@ -1,0 +1,298 @@
+/* Breakroom marquee nav — scaled sign image with vintage bulb overlay */
+
+header nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  overflow: visible !important;
+  overflow-x: visible !important;
+  min-width: 0;
+  scroll-snap-type: none;
+}
+
+.breakroom-nav-link {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-left: 0.35rem;
+  line-height: 0;
+  text-decoration: none;
+  border-radius: 6px;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.breakroom-marquee {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+  overflow: visible;
+}
+
+.breakroom-nav-sign {
+  max-width: 280px;
+  width: clamp(160px, 24vw, 300px);
+  height: auto;
+  aspect-ratio: 2.35 / 1;
+  flex-shrink: 0;
+}
+
+.breakroom-marquee__inner {
+  position: absolute;
+  inset: 0;
+  transform: scale(1.12);
+  transform-origin: center center;
+}
+
+.breakroom-marquee__sign-clip {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  clip-path: polygon(3% 14%, 80% 14%, 96% 50%, 80% 86%, 3% 86%);
+  -webkit-clip-path: polygon(3% 14%, 80% 14%, 96% 50%, 80% 86%, 3% 86%);
+}
+
+.breakroom-marquee__sign {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+}
+
+.breakroom-marquee__bulbs {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  overflow: visible;
+}
+
+@keyframes bulbFlicker {
+  0%,
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  25% {
+    opacity: 0.75;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  52% {
+    opacity: 0.15;
+    transform: translate(-50%, -50%) scale(0.55);
+  }
+
+  54% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes bulbGlowPulse {
+  0%,
+  100% {
+    opacity: 0.95;
+    transform: scale(1);
+  }
+
+  52% {
+    opacity: 0.08;
+    transform: scale(0.4);
+  }
+}
+
+@keyframes bulbMicroFlicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  49% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
+
+  51% {
+    opacity: 1;
+  }
+}
+
+.bulb {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(
+    circle at 40% 35%,
+    #ffffff 0%,
+    #ffe566 35%,
+    #ffb020 70%,
+    #e07800 100%
+  );
+  border: 1px solid rgba(255, 240, 180, 0.9);
+  opacity: 1;
+  box-shadow:
+    0 0 2px #fff8dc,
+    0 0 6px rgba(255, 210, 80, 1),
+    0 0 14px rgba(255, 180, 40, 0.85),
+    0 0 22px rgba(255, 150, 20, 0.55);
+}
+
+.bulb::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(
+    circle,
+    rgba(255, 220, 100, 0.75) 0%,
+    rgba(255, 190, 60, 0.45) 35%,
+    rgba(255, 160, 30, 0.15) 60%,
+    transparent 75%
+  );
+  pointer-events: none;
+  z-index: -1;
+}
+
+.bulb:nth-child(3),
+.bulb:nth-child(8),
+.bulb:nth-child(14),
+.bulb:nth-child(21),
+.bulb:nth-child(27) {
+  animation: bulbFlicker 4s infinite;
+}
+
+.bulb:nth-child(3)::after,
+.bulb:nth-child(8)::after,
+.bulb:nth-child(14)::after,
+.bulb:nth-child(21)::after,
+.bulb:nth-child(27)::after {
+  animation: bulbGlowPulse 4s infinite;
+}
+
+.bulb:nth-child(8),
+.bulb:nth-child(8)::after {
+  animation-delay: 0.5s;
+}
+
+.bulb:nth-child(14),
+.bulb:nth-child(14)::after {
+  animation-delay: 1.3s;
+}
+
+.bulb:nth-child(21),
+.bulb:nth-child(21)::after {
+  animation-delay: 2.1s;
+}
+
+.bulb:nth-child(27),
+.bulb:nth-child(27)::after {
+  animation-delay: 0.9s;
+}
+
+.bulb:nth-child(6),
+.bulb:nth-child(12),
+.bulb:nth-child(19),
+.bulb:nth-child(24) {
+  animation: bulbMicroFlicker 9s infinite;
+}
+
+.bulb:nth-child(6) {
+  animation-delay: 1.8s;
+}
+
+.bulb:nth-child(12) {
+  animation-delay: 3.2s;
+}
+
+.bulb:nth-child(19) {
+  animation-delay: 0.4s;
+}
+
+.bulb:nth-child(24) {
+  animation-delay: 5.5s;
+}
+
+.breakroom-nav-link:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+}
+
+.breakroom-nav-link:hover .bulb {
+  box-shadow:
+    0 0 3px #fff8dc,
+    0 0 8px rgba(255, 210, 80, 1),
+    0 0 16px rgba(255, 180, 40, 0.9),
+    0 0 26px rgba(255, 150, 20, 0.6);
+}
+
+.breakroom-nav-link--active {
+  filter: brightness(1.06) saturate(1.04);
+  cursor: default;
+  pointer-events: none;
+}
+
+.breakroom-nav-link--active:hover {
+  transform: none;
+  filter: brightness(1.06) saturate(1.04);
+}
+
+.breakroom-nav-link--active:hover .bulb {
+  box-shadow:
+    0 0 2px #fff8dc,
+    0 0 6px rgba(255, 210, 80, 0.85),
+    0 0 12px rgba(255, 180, 40, 0.65),
+    0 0 20px rgba(255, 150, 20, 0.4);
+}
+
+.breakroom-nav-link:focus-visible {
+  outline: 2px solid rgba(242, 209, 61, 0.75);
+  outline-offset: 3px;
+}
+
+header nav .breakroom-nav-link {
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  header nav {
+    gap: 0.75rem 1.25rem;
+  }
+
+  .bulb {
+    width: 5px;
+    height: 5px;
+  }
+
+  .bulb::after {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bulb {
+    animation: none !important;
+  }
+}
+
+@media print {
+  .breakroom-marquee__bulbs {
+    display: none;
+  }
+}

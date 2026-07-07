@@ -1,0 +1,15 @@
+{
+  "name": "reportready",
+  "private": true,
+  "description": "ReportReady — nurse report sheets + Breakroom",
+  "scripts": {
+    "dev": "bash run-dev.sh",
+    "start": "bash run-prod-local.sh",
+    "build": "cd artifacts/api-server && npm run build && cd ../reportready && npm run build",
+    "typecheck": "cd artifacts/reportready && npm run typecheck",
+    "install:frontend": "cd artifacts/reportready && npm install"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

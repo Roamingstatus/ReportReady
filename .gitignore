@@ -3,3 +3,6 @@ node_modules
 # Local toolchain binaries
 .tools/
 node_modules/
+
+# Anonymous analytics event log (beta storage)
+data/analytics-events.jsonl

@@ -48,7 +48,7 @@ export function FeedbackModal({ open, onOpenChange }: FeedbackModalProps) {
               aria-live="polite"
             >
               <p className="text-lg font-semibold text-slate-900">
-                🎉 Thanks for helping improve ReportReady!
+                Thanks — your feedback was sent.
               </p>
             </div>
           ) : (

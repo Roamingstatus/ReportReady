@@ -1,0 +1,454 @@
+@import "tailwindcss";
+
+@theme {
+  --color-breakroom-primary: #F2D13D;
+  --color-breakroom-secondary: #FFF8E7;
+  --color-breakroom-accent: #F6D84C;
+  --color-breakroom-card: #FFFFFF;
+  --color-breakroom-text: #2B2B2B;
+  --color-breakroom-muted: #6B6B6B;
+  --color-breakroom-warm: #8B6914;
+}
+
+:root {
+  font-family: Inter, system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+/* ── Breakroom lounge theme (warm coffee-shop / staff lounge) ─────── */
+
+.breakroom-lounge-bg {
+  background:
+    radial-gradient(ellipse 70% 45% at 15% 0%, rgba(242, 209, 61, 0.18), transparent 55%),
+    radial-gradient(ellipse 55% 35% at 85% 5%, rgba(246, 216, 76, 0.14), transparent 50%),
+    radial-gradient(ellipse 60% 40% at 50% 100%, rgba(242, 209, 61, 0.1), transparent 55%),
+    linear-gradient(180deg, #FFF8E7 0%, #FFF3D6 45%, #FFF8E7 100%);
+  color: var(--color-breakroom-text);
+}
+
+.breakroom-card {
+  @apply rounded-2xl;
+  background: var(--color-breakroom-card);
+  border: 1px solid rgba(242, 209, 61, 0.35);
+  box-shadow:
+    0 4px 20px rgba(43, 43, 43, 0.06),
+    0 1px 3px rgba(43, 43, 43, 0.04);
+}
+
+.breakroom-heading {
+  color: var(--color-breakroom-text);
+  font-weight: 700;
+}
+
+.breakroom-heading-accent {
+  color: var(--color-breakroom-warm);
+}
+
+.breakroom-lounge-title {
+  margin: 0;
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.breakroom-lounge-title__tiny {
+  color: #c4784a;
+  font-weight: 600;
+  font-style: italic;
+}
+
+.breakroom-lounge-title__nurse {
+  background: linear-gradient(135deg, #f2d13d 0%, #e8921a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-weight: 800;
+}
+
+.breakroom-lounge-title__lounge {
+  color: #8b6914;
+  font-weight: 700;
+}
+
+.breakroom-lounge-title__dots {
+  color: #c4784a;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  opacity: 0.85;
+}
+
+.breakroom-lounge-title__emoji {
+  font-size: 0.95em;
+  line-height: 1;
+}
+
+.breakroom-button {
+  @apply inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200;
+  background: linear-gradient(180deg, var(--color-breakroom-accent) 0%, var(--color-breakroom-primary) 100%);
+  border: 1px solid rgba(139, 105, 20, 0.2);
+  color: var(--color-breakroom-text);
+  box-shadow:
+    0 2px 8px rgba(242, 209, 61, 0.35),
+    0 1px 2px rgba(43, 43, 43, 0.06);
+}
+
+.breakroom-button:hover {
+  box-shadow:
+    0 4px 14px rgba(242, 209, 61, 0.45),
+    0 2px 4px rgba(43, 43, 43, 0.08);
+  transform: translateY(-1px);
+}
+
+.breakroom-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.breakroom-input {
+  @apply w-full rounded-xl border px-3 py-2.5 text-sm transition-colors;
+  border-color: rgba(242, 209, 61, 0.45);
+  background: var(--color-breakroom-secondary);
+  color: var(--color-breakroom-text);
+}
+
+.breakroom-input::placeholder {
+  color: var(--color-breakroom-muted);
+}
+
+.breakroom-input:focus {
+  border-color: var(--color-breakroom-primary);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(242, 209, 61, 0.25);
+}
+
+.category-pill {
+  @apply inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium;
+  background: var(--color-breakroom-secondary);
+  border: 1px solid rgba(242, 209, 61, 0.4);
+  color: var(--color-breakroom-text);
+}
+
+.category-pill-active {
+  background: linear-gradient(180deg, var(--color-breakroom-accent), var(--color-breakroom-primary));
+  border-color: rgba(139, 105, 20, 0.25);
+  color: var(--color-breakroom-text);
+  box-shadow: 0 2px 8px rgba(242, 209, 61, 0.3);
+}
+
+.reaction-pill {
+  @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs transition-colors;
+  background: var(--color-breakroom-secondary);
+  border: 1px solid rgba(242, 209, 61, 0.3);
+  color: var(--color-breakroom-text);
+}
+
+.reaction-pill:hover {
+  border-color: var(--color-breakroom-primary);
+  background: #FFFCF0;
+}
+
+/* Breakroom marquee nav — see public/breakroom-nav.css (mirrored for SPA bundle) */
+
+header nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  overflow: visible !important;
+  overflow-x: visible !important;
+  min-width: 0;
+  scroll-snap-type: none;
+}
+
+.breakroom-nav-link {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-left: 0.35rem;
+  line-height: 0;
+  text-decoration: none;
+  border-radius: 6px;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.breakroom-marquee {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+  overflow: visible;
+}
+
+.breakroom-nav-sign {
+  max-width: 280px;
+  width: clamp(160px, 24vw, 300px);
+  height: auto;
+  aspect-ratio: 2.35 / 1;
+  flex-shrink: 0;
+}
+
+.breakroom-marquee__inner {
+  position: absolute;
+  inset: 0;
+  transform: scale(1.12);
+  transform-origin: center center;
+}
+
+.breakroom-marquee__sign-clip {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  clip-path: polygon(3% 14%, 80% 14%, 96% 50%, 80% 86%, 3% 86%);
+  -webkit-clip-path: polygon(3% 14%, 80% 14%, 96% 50%, 80% 86%, 3% 86%);
+}
+
+.breakroom-marquee__sign {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+}
+
+.breakroom-marquee__bulbs {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  overflow: visible;
+}
+
+@keyframes bulbFlicker {
+  0%,
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  25% {
+    opacity: 0.75;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  52% {
+    opacity: 0.15;
+    transform: translate(-50%, -50%) scale(0.55);
+  }
+
+  54% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes bulbGlowPulse {
+  0%,
+  100% {
+    opacity: 0.95;
+    transform: scale(1);
+  }
+
+  52% {
+    opacity: 0.08;
+    transform: scale(0.4);
+  }
+}
+
+@keyframes bulbMicroFlicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  49% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
+
+  51% {
+    opacity: 1;
+  }
+}
+
+.bulb {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(
+    circle at 40% 35%,
+    #ffffff 0%,
+    #ffe566 35%,
+    #ffb020 70%,
+    #e07800 100%
+  );
+  border: 1px solid rgba(255, 240, 180, 0.9);
+  opacity: 1;
+  box-shadow:
+    0 0 2px #fff8dc,
+    0 0 6px rgba(255, 210, 80, 1),
+    0 0 14px rgba(255, 180, 40, 0.85),
+    0 0 22px rgba(255, 150, 20, 0.55);
+}
+
+.bulb::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(
+    circle,
+    rgba(255, 220, 100, 0.75) 0%,
+    rgba(255, 190, 60, 0.45) 35%,
+    rgba(255, 160, 30, 0.15) 60%,
+    transparent 75%
+  );
+  pointer-events: none;
+  z-index: -1;
+}
+
+.bulb:nth-child(3),
+.bulb:nth-child(8),
+.bulb:nth-child(14),
+.bulb:nth-child(21),
+.bulb:nth-child(27) {
+  animation: bulbFlicker 4s infinite;
+}
+
+.bulb:nth-child(3)::after,
+.bulb:nth-child(8)::after,
+.bulb:nth-child(14)::after,
+.bulb:nth-child(21)::after,
+.bulb:nth-child(27)::after {
+  animation: bulbGlowPulse 4s infinite;
+}
+
+.bulb:nth-child(8),
+.bulb:nth-child(8)::after {
+  animation-delay: 0.5s;
+}
+
+.bulb:nth-child(14),
+.bulb:nth-child(14)::after {
+  animation-delay: 1.3s;
+}
+
+.bulb:nth-child(21),
+.bulb:nth-child(21)::after {
+  animation-delay: 2.1s;
+}
+
+.bulb:nth-child(27),
+.bulb:nth-child(27)::after {
+  animation-delay: 0.9s;
+}
+
+.bulb:nth-child(6),
+.bulb:nth-child(12),
+.bulb:nth-child(19),
+.bulb:nth-child(24) {
+  animation: bulbMicroFlicker 9s infinite;
+}
+
+.bulb:nth-child(6) {
+  animation-delay: 1.8s;
+}
+
+.bulb:nth-child(12) {
+  animation-delay: 3.2s;
+}
+
+.bulb:nth-child(19) {
+  animation-delay: 0.4s;
+}
+
+.bulb:nth-child(24) {
+  animation-delay: 5.5s;
+}
+
+.breakroom-nav-link:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+}
+
+.breakroom-nav-link:hover .bulb {
+  box-shadow:
+    0 0 3px #fff8dc,
+    0 0 8px rgba(255, 210, 80, 1),
+    0 0 16px rgba(255, 180, 40, 0.9),
+    0 0 26px rgba(255, 150, 20, 0.6);
+}
+
+.breakroom-nav-link--active {
+  filter: brightness(1.06) saturate(1.04);
+  cursor: default;
+  pointer-events: none;
+}
+
+.breakroom-nav-link--active:hover {
+  transform: none;
+  filter: brightness(1.06) saturate(1.04);
+}
+
+.breakroom-nav-link--active:hover .bulb {
+  box-shadow:
+    0 0 2px #fff8dc,
+    0 0 6px rgba(255, 210, 80, 0.85),
+    0 0 12px rgba(255, 180, 40, 0.65),
+    0 0 20px rgba(255, 150, 20, 0.4);
+}
+
+.breakroom-nav-link:focus-visible {
+  outline: 2px solid rgba(242, 209, 61, 0.75);
+  outline-offset: 3px;
+}
+
+header nav .breakroom-nav-link {
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  header nav {
+    gap: 0.75rem 1.25rem;
+  }
+
+  .bulb {
+    width: 5px;
+    height: 5px;
+  }
+
+  .bulb::after {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bulb {
+    animation: none !important;
+  }
+}
+
+@media print {
+  .breakroom-marquee__bulbs,
+  .print-hide {
+    display: none !important;
+  }
+}

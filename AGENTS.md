@@ -1,39 +1,97 @@
 # ReportReady
 
-ReportReady is a web app offering free, printable nurse report sheets. This repository is a **deployment/artifacts repo**: it contains only pre-built outputs (bundled backend + static frontend) and a `Dockerfile`. There is **no application source, build system, linter, or test suite** in this repo — those were intentionally trimmed from history (there are no `package.json`, lockfiles, or `pnpm-workspace.yaml`). Do not expect `npm install`/`build`/`lint`/`test` to work here.
+ReportReady is a web app offering free, printable nurse report sheets, plus **The Breakroom** — a nurse lounge page at `/breakroom`.
 
-## Cursor Cloud specific instructions
+## What runs here
 
-### What runs here
-- **`artifacts/api-server`** — Express API, shipped as a self-contained esbuild bundle (`dist/index.mjs`). Routes: `GET /api/healthz` and `POST /api/feedback`.
-- **`artifacts/reportready`** — the React/Vite SPA frontend (formerly codenamed `shift-canvas`), shipped as pre-built static files in `dist/public/` (uses `wouter` for client-side routing).
-- **`artifacts/mockup-sandbox`** — no source in this repo (only symlinked `node_modules`); not runnable.
+- **`artifacts/api-server`** — Express API (`dist/index.mjs`). Routes include `GET /api/healthz`, `POST /api/feedback`, analytics (`/api/analytics/*`), and admin Google OAuth (`GET /api/analytics/admin/google/start`). **Rebuild after API changes:** `cd artifacts/api-server && npm run build`.
+- **`artifacts/reportready`** — React/Vite SPA (source in `src/`, build output in `dist/public/`). Uses a dual-bootstrap: `/breakroom` is the new lounge UI; all other routes load the preserved legacy bundle from `public/legacy/`.
+- **`scripts/devserver.mjs`** — Static file server + `/api` proxy (production-like local serving).
+- **`scripts/start.mjs`** — Runs API + devserver together on one port (used by Docker/Railway).
 
-### Running the backend (api-server)
-From `artifacts/api-server`:
+## Run locally (recommended — hot reload)
 
+**Requirements:** Node.js **18+** (Node 20 LTS recommended).
+
+From the repo root:
+
+```bash
+# First time only
+cd artifacts/api-server && npm install && npm run build && cd ../..
+cd artifacts/reportready && npm install && cd ../..
+
+# Start API + Vite dev server
+bash run-dev.sh
 ```
-PORT=3000 NODE_ENV=production node dist/index.mjs
+
+Open:
+
+- **App:** http://localhost:22838/
+- **Breakroom:** http://localhost:22838/breakroom
+
+`run-dev.sh` starts:
+
+1. API on port **3001** (`NODE_ENV=production`)
+2. Vite dev server on port **22838** (proxies `/api` → `:3001`)
+
+Or use npm from the repo root:
+
+```bash
+npm run dev
 ```
 
-- `PORT` is **required** — the server throws on startup if it is unset.
-- Use `NODE_ENV=production`. **Gotcha:** in dev/non-production mode the bundle configures a `pino-pretty` transport whose worker path is hard-coded to the original build machine's absolute path (`/home/romi/.../artifacts/api-server/dist`). Running without `NODE_ENV=production` crashes at startup with `MODULE_NOT_FOUND` for `thread-stream-worker.mjs`. Production mode emits JSON logs and avoids the transport.
-- The bundle is fully self-contained; the committed `node_modules` are **broken pnpm symlinks** (they point at a non-existent root `node_modules/.pnpm` store) and are **not** needed to run.
-- `POST /api/feedback` writes JSON (and any screenshot) to a `feedback/` directory at the repo root (resolved as `artifacts/api-server/dist/../../..` = the workspace root). No database is used at runtime.
+## Run locally (production build, no Vite)
 
-### Running the frontend (reportready)
-The frontend is static (no build step here); serve `artifacts/reportready/dist/public/` with:
-- SPA fallback to `index.html` for unknown paths (client-side routing), and
-- a reverse proxy that forwards `/api/*` to the api-server (the app calls `/api/feedback` as a **same-origin relative URL**, so a plain static server alone will not reach the backend).
+Serve the built static files + API (good for smoke-testing deploy output):
 
-A minimal Node-only (no dependencies) static + `/api` proxy server is sufficient. Example core flow to smoke-test end to end: open the homepage, click a template's "View & Print", then "Print Sheet"; and submit the floating "Feedback" form (this exercises the frontend → `/api/feedback` → filesystem path).
+```bash
+cd artifacts/reportready && npm install && npm run build && cd ../..
+bash run-prod-local.sh
+```
 
-### Single-service container (Railway)
-The `Dockerfile` builds one image that runs the whole app on a single public port via `scripts/start.mjs`, which supervises two processes:
-- the API on an internal port (`API_PORT`, default `3001`), and
-- `scripts/devserver.mjs` on the platform's `PORT` (Railway injects this), proxying `/api` to the API.
+Or: `npm start` from the repo root.
 
-If either process exits, the launcher exits non-zero so the platform restarts the service. Build/run locally: `docker build -t reportready . && docker run -e PORT=9090 -p 9090:9090 reportready` — then the UI and `/api/*` are both served on `:9090`.
+## API only
 
-### No lint/test/build
-There are no lint, test, or build commands in this repo — it holds pre-built artifacts only. Environment setup requires no dependency installation.
+```bash
+cd artifacts/api-server
+PORT=3001 NODE_ENV=production node dist/index.mjs
+```
+
+- `PORT` is **required**.
+- Use `NODE_ENV=production` — dev mode can crash due to hard-coded pino worker paths in the bundle.
+
+## Build / typecheck
+
+```bash
+cd artifacts/api-server && npm run build
+cd artifacts/reportready
+npm run typecheck
+npm run build
+```
+
+## Docker
+
+```bash
+docker build -t reportready .
+docker run -e PORT=9090 -p 9090:9090 reportready
+```
+
+UI and `/api/*` are both on the container's `PORT`.
+
+## Feedback
+
+`POST /api/feedback` sends feedback email via [Resend](https://resend.com). Required env vars on the API process:
+
+- `RESEND_API_KEY`
+- `FEEDBACK_TO_EMAIL` (default `support@nexusgarden.live`)
+- `FEEDBACK_FROM_EMAIL` (default `ReportReady <support@nexusgarden.live>`)
+
+## Troubleshooting
+
+| Problem | Fix |
+|--------|-----|
+| `crypto.hash is not a function` / Vite won't start | You had Vite 7 on Node 18. Run `cd artifacts/reportready && npm install` — this repo pins Vite 6 for Node 18 compatibility. |
+| `PORT` / `BASE_PATH` errors | Use `bash run-dev.sh` from repo root; it sets these automatically. |
+| Blank page on `/` | Legacy bundle loads from `/legacy/`; ensure `public/legacy/` exists and run `npm run build` if you changed source. |
+| Feedback fails | Start the API (`run-dev.sh` does this) — a static-only server can't reach `/api/feedback`. |
