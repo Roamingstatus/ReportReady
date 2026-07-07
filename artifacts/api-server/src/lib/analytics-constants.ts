@@ -34,6 +34,7 @@ export const ALLOWED_ANALYTICS_EVENTS = new Set([
   "breakroom_visit",
   "breakroom_post_created",
   "breakroom_reaction",
+  "sheet_edit_click",
 ]);
 
 export type AnalyticsRange = "today" | "7d" | "30d" | "all";

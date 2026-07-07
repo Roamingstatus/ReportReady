@@ -15,7 +15,8 @@ export type AnalyticsEventName =
   | "coming_soon_preview_click"
   | "breakroom_visit"
   | "breakroom_post_created"
-  | "breakroom_reaction";
+  | "breakroom_reaction"
+  | "sheet_edit_click";
 
 export type AnalyticsMetadata = Record<string, string | number | boolean | null | undefined>;
 

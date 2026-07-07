@@ -32,7 +32,8 @@ var ALLOWED_ANALYTICS_EVENTS = /* @__PURE__ */ new Set([
   "coming_soon_preview_click",
   "breakroom_visit",
   "breakroom_post_created",
-  "breakroom_reaction"
+  "breakroom_reaction",
+  "sheet_edit_click"
 ]);
 var ANALYTICS_RANGES = /* @__PURE__ */ new Set(["today", "7d", "30d", "all"]);
 
