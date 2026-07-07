@@ -37,6 +37,8 @@ import {
   validateReactionBody,
 } from "../lib/breakroom-validation.js";
 
+const router = Router();
+
 const mutationGuards = [
   requireBreakroomMutationOrigin,
   requireBreakroomCsrf,

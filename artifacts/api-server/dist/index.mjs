@@ -15,7 +15,7 @@ function securityHeaders(_req, res, next) {
 }
 
 // src/routes/index.ts
-import { Router as Router7 } from "express";
+import { Router as Router8 } from "express";
 
 // src/routes/analytics-admin.ts
 import { Router } from "express";
@@ -569,7 +569,7 @@ function escapeHtml(value) {
 }
 
 // src/routes/analytics-admin.ts
-var router2 = Router();
+var router = Router();
 function parseRange(value) {
   const range = typeof value === "string" ? value : "7d";
   return ANALYTICS_RANGES.has(range) ? range : "7d";
@@ -582,7 +582,7 @@ function redirectToAdminPath(res, error) {
 function redirectToHomepage(res) {
   res.redirect(302, "/");
 }
-router2.get("/analytics/admin/config", (_req, res) => {
+router.get("/analytics/admin/config", (_req, res) => {
   res.status(200).json({
     ok: true,
     adminPath: getAnalyticsAdminPath(),
@@ -590,7 +590,7 @@ router2.get("/analytics/admin/config", (_req, res) => {
     authMethod: "google_pin"
   });
 });
-router2.get("/analytics/admin/session", (req, res) => {
+router.get("/analytics/admin/session", (req, res) => {
   const status = getAdminSessionStatus(req);
   if (status.accessDenied) {
     clearAllAdminCookies(res);
@@ -619,7 +619,7 @@ router2.get("/analytics/admin/session", (req, res) => {
     email: status.email
   });
 });
-router2.get("/analytics/admin/google/start", analyticsLoginRateLimit, (req, res) => {
+router.get("/analytics/admin/google/start", analyticsLoginRateLimit, (req, res) => {
   if (!isAnalyticsAdminConfigured()) {
     redirectToHomepage(res);
     return;
@@ -634,7 +634,7 @@ router2.get("/analytics/admin/google/start", analyticsLoginRateLimit, (req, res)
     redirectToHomepage(res);
   }
 });
-router2.get("/analytics/admin/google/callback", analyticsLoginRateLimit, async (req, res) => {
+router.get("/analytics/admin/google/callback", analyticsLoginRateLimit, async (req, res) => {
   if (!isAnalyticsAdminConfigured()) {
     redirectToHomepage(res);
     return;
@@ -691,7 +691,7 @@ router2.get("/analytics/admin/google/callback", analyticsLoginRateLimit, async (
     redirectToHomepage(res);
   }
 });
-router2.post("/analytics/admin/verify-pin", analyticsPinRateLimit, (req, res) => {
+router.post("/analytics/admin/verify-pin", analyticsPinRateLimit, (req, res) => {
   const googleSession = getGoogleSessionFromRequest(req);
   if (!googleSession || !isEmailAllowed(googleSession.email)) {
     clearAllAdminCookies(res);
@@ -715,11 +715,11 @@ router2.post("/analytics/admin/verify-pin", analyticsPinRateLimit, (req, res) =>
   });
   res.status(200).json({ ok: true, adminVerified: true });
 });
-router2.post("/analytics/admin/logout", (_req, res) => {
+router.post("/analytics/admin/logout", (_req, res) => {
   clearAllAdminCookies(res);
   res.status(200).json({ ok: true });
 });
-router2.get("/analytics/admin/dashboard", async (req, res) => {
+router.get("/analytics/admin/dashboard", async (req, res) => {
   if (!requireFullAdminAccess(req, res)) return;
   const range = parseRange(req.query.range);
   try {
@@ -733,7 +733,7 @@ router2.get("/analytics/admin/dashboard", async (req, res) => {
     res.status(500).json({ ok: false, error: "Dashboard unavailable." });
   }
 });
-var analytics_admin_default = router2;
+var analytics_admin_default = router;
 
 // src/routes/analytics.ts
 import { Router as Router2 } from "express";
@@ -806,8 +806,8 @@ function validateAnalyticsEventBody(body) {
 }
 
 // src/routes/analytics.ts
-var router3 = Router2();
-router3.all("/analytics/event", (req, res, next) => {
+var router2 = Router2();
+router2.all("/analytics/event", (req, res, next) => {
   if (req.method === "POST") {
     next();
     return;
@@ -815,7 +815,7 @@ router3.all("/analytics/event", (req, res, next) => {
   res.set("Allow", "POST");
   res.status(405).json({ ok: false, error: "Method not allowed." });
 });
-router3.post("/analytics/event", analyticsEventRateLimit, async (req, res) => {
+router2.post("/analytics/event", analyticsEventRateLimit, async (req, res) => {
   const validation = validateAnalyticsEventBody(req.body);
   if (!validation.ok) {
     res.status(validation.status).json({ ok: false, error: validation.error });
@@ -843,7 +843,7 @@ router3.post("/analytics/event", analyticsEventRateLimit, async (req, res) => {
     res.status(500).json({ ok: false, error: "Event could not be recorded." });
   }
 });
-var analytics_default = router3;
+var analytics_default = router2;
 
 // src/routes/breakroom-admin.ts
 import { Router as Router3 } from "express";
@@ -2048,8 +2048,8 @@ async function appendModerationLog(input) {
 }
 
 // src/routes/breakroom-admin.ts
-var router4 = Router3();
-router4.use((req, res, next) => {
+var router3 = Router3();
+router3.use((req, res, next) => {
   if (req.method === "GET") {
     next();
     return;
@@ -2088,7 +2088,7 @@ async function runAdminAction(req, res, handler, log) {
     res.status(500).json({ ok: false, error: "Moderation action failed." });
   }
 }
-router4.get("/admin/breakroom/content", async (req, res) => {
+router3.get("/admin/breakroom/content", async (req, res) => {
   if (!requireFullAdminAccess(req, res)) return;
   try {
     const content = await listAdminModerationContent();
@@ -2100,7 +2100,7 @@ router4.get("/admin/breakroom/content", async (req, res) => {
     res.status(500).json({ ok: false, error: "Breakroom content could not be loaded." });
   }
 });
-router4.get("/admin/breakroom/pending", async (req, res) => {
+router3.get("/admin/breakroom/pending", async (req, res) => {
   if (!requireFullAdminAccess(req, res)) return;
   try {
     const pending = await listPendingModeration();
@@ -2112,7 +2112,7 @@ router4.get("/admin/breakroom/pending", async (req, res) => {
     res.status(500).json({ ok: false, error: "Pending content could not be loaded." });
   }
 });
-router4.post("/admin/breakroom/posts/:postId/hide", async (req, res) => {
+router3.post("/admin/breakroom/posts/:postId/hide", async (req, res) => {
   const postId = req.params.postId;
   if (!isValidBreakroomId(postId)) {
     res.status(400).json({ ok: false, error: "Invalid request." });
@@ -2126,7 +2126,7 @@ router4.post("/admin/breakroom/posts/:postId/hide", async (req, res) => {
     { action: "hide_post", targetType: "post", targetId: postId, reason }
   );
 });
-router4.post("/admin/breakroom/posts/:postId/restore", async (req, res) => {
+router3.post("/admin/breakroom/posts/:postId/restore", async (req, res) => {
   const postId = req.params.postId;
   if (!isValidBreakroomId(postId)) {
     res.status(400).json({ ok: false, error: "Invalid request." });
@@ -2139,7 +2139,7 @@ router4.post("/admin/breakroom/posts/:postId/restore", async (req, res) => {
     { action: "restore_post", targetType: "post", targetId: postId, reason: "restored" }
   );
 });
-router4.delete("/admin/breakroom/posts/:postId", async (req, res) => {
+router3.delete("/admin/breakroom/posts/:postId", async (req, res) => {
   const postId = req.params.postId;
   if (!isValidBreakroomId(postId)) {
     res.status(400).json({ ok: false, error: "Invalid request." });
@@ -2169,7 +2169,7 @@ router4.delete("/admin/breakroom/posts/:postId", async (req, res) => {
     res.status(500).json({ ok: false, error: "Moderation action failed." });
   }
 });
-router4.post("/admin/breakroom/comments/:commentId/hide", async (req, res) => {
+router3.post("/admin/breakroom/comments/:commentId/hide", async (req, res) => {
   const commentId = req.params.commentId;
   if (!isValidBreakroomId(commentId)) {
     res.status(400).json({ ok: false, error: "Invalid request." });
@@ -2183,7 +2183,7 @@ router4.post("/admin/breakroom/comments/:commentId/hide", async (req, res) => {
     { action: "hide_comment", targetType: "comment", targetId: commentId, reason }
   );
 });
-router4.post("/admin/breakroom/comments/:commentId/restore", async (req, res) => {
+router3.post("/admin/breakroom/comments/:commentId/restore", async (req, res) => {
   const commentId = req.params.commentId;
   if (!isValidBreakroomId(commentId)) {
     res.status(400).json({ ok: false, error: "Invalid request." });
@@ -2196,7 +2196,7 @@ router4.post("/admin/breakroom/comments/:commentId/restore", async (req, res) =>
     { action: "restore_comment", targetType: "comment", targetId: commentId, reason: "restored" }
   );
 });
-router4.delete("/admin/breakroom/comments/:commentId", async (req, res) => {
+router3.delete("/admin/breakroom/comments/:commentId", async (req, res) => {
   const commentId = req.params.commentId;
   if (!isValidBreakroomId(commentId)) {
     res.status(400).json({ ok: false, error: "Invalid request." });
@@ -2226,7 +2226,7 @@ router4.delete("/admin/breakroom/comments/:commentId", async (req, res) => {
     res.status(500).json({ ok: false, error: "Moderation action failed." });
   }
 });
-router4.post("/admin/breakroom/posts/:postId/review", async (req, res) => {
+router3.post("/admin/breakroom/posts/:postId/review", async (req, res) => {
   const postId = req.params.postId;
   if (!isValidBreakroomId(postId)) {
     res.status(400).json({ ok: false, error: "Invalid request." });
@@ -2246,7 +2246,7 @@ router4.post("/admin/breakroom/posts/:postId/review", async (req, res) => {
     }
   );
 });
-router4.post("/admin/breakroom/comments/:commentId/review", async (req, res) => {
+router3.post("/admin/breakroom/comments/:commentId/review", async (req, res) => {
   const commentId = req.params.commentId;
   if (!isValidBreakroomId(commentId)) {
     res.status(400).json({ ok: false, error: "Invalid request." });
@@ -2266,7 +2266,10 @@ router4.post("/admin/breakroom/comments/:commentId/review", async (req, res) => 
     }
   );
 });
-var breakroom_admin_default = router4;
+var breakroom_admin_default = router3;
+
+// src/routes/breakroom.ts
+import { Router as Router4 } from "express";
 
 // src/lib/breakroom-auth.ts
 function requireBreakroomCsrf(req, res, next) {
@@ -2285,6 +2288,7 @@ function requireBreakroomAuth(req, res, next) {
 }
 
 // src/routes/breakroom.ts
+var router4 = Router4();
 var mutationGuards = [
   requireBreakroomMutationOrigin,
   requireBreakroomCsrf
@@ -2307,7 +2311,7 @@ function withGuards(...handlers) {
     runGuards([...mutationGuards, ...handlers], req, res, next);
   };
 }
-router.get("/breakroom/session", async (_req, res) => {
+router4.get("/breakroom/session", async (_req, res) => {
   try {
     await seedBreakroomIfEmpty();
     const session = ensureBreakroomSession(_req, res);
@@ -2323,7 +2327,7 @@ router.get("/breakroom/session", async (_req, res) => {
     res.status(500).json({ ok: false, error: "Session could not be started." });
   }
 });
-router.get("/breakroom/posts", async (req, res) => {
+router4.get("/breakroom/posts", async (req, res) => {
   try {
     await seedBreakroomIfEmpty();
     const viewerGuestId = getBreakroomSession(req)?.guestId ?? null;
@@ -2336,7 +2340,7 @@ router.get("/breakroom/posts", async (req, res) => {
     res.status(500).json({ ok: false, error: "Posts could not be loaded." });
   }
 });
-router.post(
+router4.post(
   "/breakroom/posts",
   withGuards(requireBreakroomAuth, breakroomCreatePostRateLimit),
   async (req, res) => {
@@ -2385,7 +2389,7 @@ router.post(
     }
   }
 );
-router.patch(
+router4.patch(
   "/breakroom/posts/:postId",
   withGuards(requireBreakroomAuth, breakroomMutateRateLimit),
   async (req, res) => {
@@ -2436,7 +2440,7 @@ router.patch(
     }
   }
 );
-router.delete(
+router4.delete(
   "/breakroom/posts/:postId",
   withGuards(requireBreakroomAuth, breakroomMutateRateLimit),
   async (req, res) => {
@@ -2465,7 +2469,7 @@ router.delete(
     }
   }
 );
-router.post(
+router4.post(
   "/breakroom/posts/:postId/comments",
   withGuards(requireBreakroomAuth, breakroomCreateCommentRateLimit),
   async (req, res) => {
@@ -2518,7 +2522,7 @@ router.post(
     }
   }
 );
-router.delete(
+router4.delete(
   "/breakroom/comments/:commentId",
   withGuards(requireBreakroomAuth, breakroomMutateRateLimit),
   async (req, res) => {
@@ -2547,7 +2551,7 @@ router.delete(
     }
   }
 );
-router.post(
+router4.post(
   "/breakroom/posts/:postId/reactions",
   withGuards(requireBreakroomAuth, breakroomReactionRateLimit),
   async (req, res) => {
@@ -2585,7 +2589,7 @@ router.post(
     }
   }
 );
-router.post(
+router4.post(
   "/breakroom/posts/:postId/report",
   withGuards(requireBreakroomAuth, breakroomReportRateLimit),
   async (req, res) => {
@@ -2609,7 +2613,7 @@ router.post(
     }
   }
 );
-router.post(
+router4.post(
   "/breakroom/comments/:commentId/report",
   withGuards(requireBreakroomAuth, breakroomReportRateLimit),
   async (req, res) => {
@@ -2633,10 +2637,10 @@ router.post(
     }
   }
 );
-var breakroom_default = router;
+var breakroom_default = router4;
 
 // src/routes/feedback.ts
-import { Router as Router4 } from "express";
+import { Router as Router5 } from "express";
 
 // src/lib/feedback-rate-limit.ts
 var WINDOW_MS = 15 * 60 * 1e3;
@@ -2888,7 +2892,7 @@ async function sendFeedbackEmail(input) {
 }
 
 // src/routes/feedback.ts
-var router5 = Router4();
+var router5 = Router5();
 router5.all("/feedback", (req, res, next) => {
   if (req.method === "POST") {
     next();
@@ -2949,16 +2953,16 @@ router5.post("/feedback", feedbackRateLimit, async (req, res) => {
 var feedback_default = router5;
 
 // src/routes/health.ts
-import { Router as Router5 } from "express";
-var router6 = Router5();
+import { Router as Router6 } from "express";
+var router6 = Router6();
 router6.get("/healthz", (_req, res) => {
   res.json({ status: "ok" });
 });
 var health_default = router6;
 
 // src/routes/test-email.ts
-import { Router as Router6 } from "express";
-var router7 = Router6();
+import { Router as Router7 } from "express";
+var router7 = Router7();
 var TEST_FROM = "support@nexusgarden.live";
 var TEST_TO = "support@nexusgarden.live";
 var TEST_SUBJECT = "ReportReady Email Test";
@@ -2992,7 +2996,7 @@ router7.post("/test-email", feedbackRateLimit, async (_req, res) => {
 var test_email_default = router7;
 
 // src/routes/index.ts
-var router8 = Router7();
+var router8 = Router8();
 router8.use(health_default);
 router8.use(feedback_default);
 router8.use(test_email_default);
