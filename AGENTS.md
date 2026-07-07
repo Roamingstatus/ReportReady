@@ -49,7 +49,11 @@ cd artifacts/reportready && npm install && npm run build && cd ../..
 bash run-prod-local.sh
 ```
 
-Or: `npm start` from the repo root.
+Or: `npm run start:local` from the repo root (builds first if needed).
+
+## Railway
+
+`railway.toml` sets `buildCommand` to `bash scripts/build-all.sh` (installs deps in both `artifacts/*` workspaces, then builds) and `startCommand` to `node scripts/start.mjs`.
 
 ## API only
 

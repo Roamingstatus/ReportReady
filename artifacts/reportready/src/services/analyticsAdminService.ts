@@ -30,6 +30,15 @@ export interface AnalyticsDashboard {
     createdAt: string;
   }>;
   trafficByPage: Array<{ path: string; count: number }>;
+  guestVisitors: Array<{
+    guestId: string;
+    firstSeen: string;
+    lastSeen: string;
+    visitCount: number;
+    deviceType: string;
+    browserFamily: string;
+    recentPaths: string[];
+  }>;
 }
 
 export interface AdminSessionState {

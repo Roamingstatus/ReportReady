@@ -20,6 +20,17 @@ export interface AnalyticsDashboardData {
   topPrintedTemplates: Array<{ templateId: string; count: number }>;
   recentEvents: AnalyticsEventRecord[];
   trafficByPage: Array<{ path: string; count: number }>;
+  guestVisitors: GuestVisitorRow[];
+}
+
+export interface GuestVisitorRow {
+  guestId: string;
+  firstSeen: string;
+  lastSeen: string;
+  visitCount: number;
+  deviceType: string;
+  browserFamily: string;
+  recentPaths: string[];
 }
 
 function startOfUtcDay(date: Date): Date {
@@ -90,6 +101,63 @@ function trafficByPage(events: AnalyticsEventRecord[], limit = 12): Array<{ path
     .slice(0, limit);
 }
 
+interface GuestAccumulator {
+  firstSeen: string;
+  lastSeen: string;
+  visitCount: number;
+  deviceType: string;
+  browserFamily: string;
+  pathsByRecency: string[];
+}
+
+function buildGuestVisitors(events: AnalyticsEventRecord[], limit = 100): GuestVisitorRow[] {
+  const byGuest = new Map<string, GuestAccumulator>();
+
+  const sorted = [...events].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+
+  for (const event of sorted) {
+    const existing = byGuest.get(event.guestId);
+    const pagePath = event.path || "/";
+
+    if (!existing) {
+      byGuest.set(event.guestId, {
+        firstSeen: event.createdAt,
+        lastSeen: event.createdAt,
+        visitCount: event.eventName === "page_view" ? 1 : 0,
+        deviceType: event.deviceType || "unknown",
+        browserFamily: event.browserFamily || "unknown",
+        pathsByRecency: event.eventName === "page_view" ? [pagePath] : [],
+      });
+      continue;
+    }
+
+    existing.lastSeen = event.createdAt;
+    existing.deviceType = event.deviceType || existing.deviceType;
+    existing.browserFamily = event.browserFamily || existing.browserFamily;
+
+    if (event.eventName === "page_view") {
+      existing.visitCount += 1;
+      existing.pathsByRecency = [
+        pagePath,
+        ...existing.pathsByRecency.filter((p) => p !== pagePath),
+      ].slice(0, 5);
+    }
+  }
+
+  return [...byGuest.entries()]
+    .map(([guestId, acc]) => ({
+      guestId,
+      firstSeen: acc.firstSeen,
+      lastSeen: acc.lastSeen,
+      visitCount: acc.visitCount,
+      deviceType: acc.deviceType,
+      browserFamily: acc.browserFamily,
+      recentPaths: acc.pathsByRecency,
+    }))
+    .sort((a, b) => b.lastSeen.localeCompare(a.lastSeen))
+    .slice(0, limit);
+}
+
 export function buildAnalyticsDashboard(
   events: AnalyticsEventRecord[],
   range: AnalyticsRange,
@@ -117,5 +185,6 @@ export function buildAnalyticsDashboard(
     topPrintedTemplates: topTemplates(filtered, "print_click"),
     recentEvents: [...filtered].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 50),
     trafficByPage: trafficByPage(filtered),
+    guestVisitors: buildGuestVisitors(filtered),
   };
 }

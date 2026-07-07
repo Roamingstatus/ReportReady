@@ -28,6 +28,11 @@ function StatCard({ label, value }: { label: string; value: number }) {
   );
 }
 
+function shortenGuestId(guestId: string): string {
+  if (guestId.length <= 12) return guestId;
+  return `${guestId.slice(0, 8)}…${guestId.slice(-4)}`;
+}
+
 function AccessDeniedPanel() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
@@ -247,6 +252,70 @@ function DashboardPanel({
                 )}
               </tbody>
             </table>
+          </div>
+        </section>
+
+        <section className="mt-8">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <h2 className="text-lg font-semibold text-slate-900">Guest visitors</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              One row per anonymous guest ID (browser localStorage). No login or IP stored.
+            </p>
+            <div className="mt-4 max-h-[32rem] overflow-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="sticky top-0 bg-white">
+                  <tr className="text-slate-500">
+                    <th className="pb-2 pr-3 font-medium">Guest ID</th>
+                    <th className="pb-2 pr-3 font-medium">First seen</th>
+                    <th className="pb-2 pr-3 font-medium">Last seen</th>
+                    <th className="pb-2 pr-3 font-medium">Visits</th>
+                    <th className="pb-2 pr-3 font-medium">Device</th>
+                    <th className="pb-2 pr-3 font-medium">Browser</th>
+                    <th className="pb-2 font-medium">Recent paths</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {dashboard.guestVisitors.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-4 text-slate-400">
+                        No guest visitors yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    dashboard.guestVisitors.map((guest) => (
+                      <tr key={guest.guestId} className="border-t border-slate-100 align-top">
+                        <td
+                          className="py-2 pr-3 font-mono text-xs text-slate-700"
+                          title={guest.guestId}
+                        >
+                          {shortenGuestId(guest.guestId)}
+                        </td>
+                        <td className="py-2 pr-3 whitespace-nowrap text-xs text-slate-500">
+                          {new Date(guest.firstSeen).toLocaleString()}
+                        </td>
+                        <td className="py-2 pr-3 whitespace-nowrap text-xs text-slate-500">
+                          {new Date(guest.lastSeen).toLocaleString()}
+                        </td>
+                        <td className="py-2 pr-3 text-slate-900">{guest.visitCount}</td>
+                        <td className="py-2 pr-3 capitalize text-slate-700">{guest.deviceType}</td>
+                        <td className="py-2 pr-3 capitalize text-slate-700">{guest.browserFamily}</td>
+                        <td className="py-2 font-mono text-xs text-slate-600">
+                          {guest.recentPaths.length === 0 ? (
+                            "—"
+                          ) : (
+                            <ul className="space-y-1">
+                              {guest.recentPaths.map((path) => (
+                                <li key={path}>{path}</li>
+                              ))}
+                            </ul>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </section>
 

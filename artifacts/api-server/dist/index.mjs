@@ -431,6 +431,44 @@ function trafficByPage(events, limit = 12) {
   }
   return [...counts.entries()].map(([path2, count]) => ({ path: path2, count })).sort((a, b) => b.count - a.count).slice(0, limit);
 }
+function buildGuestVisitors(events, limit = 100) {
+  const byGuest = /* @__PURE__ */ new Map();
+  const sorted = [...events].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  for (const event of sorted) {
+    const existing = byGuest.get(event.guestId);
+    const pagePath = event.path || "/";
+    if (!existing) {
+      byGuest.set(event.guestId, {
+        firstSeen: event.createdAt,
+        lastSeen: event.createdAt,
+        visitCount: event.eventName === "page_view" ? 1 : 0,
+        deviceType: event.deviceType || "unknown",
+        browserFamily: event.browserFamily || "unknown",
+        pathsByRecency: event.eventName === "page_view" ? [pagePath] : []
+      });
+      continue;
+    }
+    existing.lastSeen = event.createdAt;
+    existing.deviceType = event.deviceType || existing.deviceType;
+    existing.browserFamily = event.browserFamily || existing.browserFamily;
+    if (event.eventName === "page_view") {
+      existing.visitCount += 1;
+      existing.pathsByRecency = [
+        pagePath,
+        ...existing.pathsByRecency.filter((p) => p !== pagePath)
+      ].slice(0, 5);
+    }
+  }
+  return [...byGuest.entries()].map(([guestId, acc]) => ({
+    guestId,
+    firstSeen: acc.firstSeen,
+    lastSeen: acc.lastSeen,
+    visitCount: acc.visitCount,
+    deviceType: acc.deviceType,
+    browserFamily: acc.browserFamily,
+    recentPaths: acc.pathsByRecency
+  })).sort((a, b) => b.lastSeen.localeCompare(a.lastSeen)).slice(0, limit);
+}
 function buildAnalyticsDashboard(events, range) {
   const filtered = filterByRange(events, range);
   const todayStart = startOfUtcDay(/* @__PURE__ */ new Date());
@@ -453,7 +491,8 @@ function buildAnalyticsDashboard(events, range) {
     topTemplatesViewed: topTemplates(filtered, "template_view"),
     topPrintedTemplates: topTemplates(filtered, "print_click"),
     recentEvents: [...filtered].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 50),
-    trafficByPage: trafficByPage(filtered)
+    trafficByPage: trafficByPage(filtered),
+    guestVisitors: buildGuestVisitors(filtered)
   };
 }
 

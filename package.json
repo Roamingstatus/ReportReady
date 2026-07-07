@@ -8,9 +8,14 @@
     "start:local": "bash run-prod-local.sh",
     "build": "bash scripts/build-all.sh",
     "typecheck": "cd artifacts/reportready && npm run typecheck",
-    "install:frontend": "cd artifacts/reportready && npm install"
+    "install:frontend": "cd artifacts/reportready && npm install",
+    "capture:media:install": "playwright install chromium",
+    "capture:media": "node scripts/capture-marketing-media.mjs"
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "playwright": "^1.52.0"
   }
 }
