@@ -4,7 +4,8 @@
   "description": "ReportReady — nurse report sheets + Breakroom",
   "scripts": {
     "dev": "bash run-dev.sh",
-    "start": "bash run-prod-local.sh",
+    "start": "node scripts/start.mjs",
+    "start:local": "bash run-prod-local.sh",
     "build": "bash scripts/build-all.sh",
     "typecheck": "cd artifacts/reportready && npm run typecheck",
     "install:frontend": "cd artifacts/reportready && npm install"

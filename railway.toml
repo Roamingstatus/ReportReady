@@ -1,0 +1,7 @@
+# Railway / Railpack: monorepo with deps in artifacts/* (root package.json has no runtime deps).
+[build]
+buildCommand = "bash scripts/build-all.sh"
+
+[deploy]
+startCommand = "node scripts/start.mjs"
+restartPolicyType = "on_failure"
