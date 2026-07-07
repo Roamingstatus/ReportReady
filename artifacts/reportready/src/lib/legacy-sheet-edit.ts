@@ -1,20 +1,19 @@
-import { beginSheetEdit } from "@/lib/sheet-edit";
+import {
+  beginSheetEdit,
+  getTemplateIdFromPrintButtonTestId,
+  isFreeEditableSheetId,
+} from "@/lib/sheet-edit";
 
 const EDIT_BUTTON_CLASS = "sheet-edit-button";
-
-function extractTemplateIdFromPrintButton(button: Element): string | null {
-  const testId = button.getAttribute("data-testid");
-  const match = testId?.match(/^button-view-print-(.+)$/);
-  return match?.[1] ?? null;
-}
+const TOOLBAR_CLASS = "sheet-view-toolbar";
 
 function createEditButton(templateId: string): HTMLButtonElement {
   const button = document.createElement("button");
   button.type = "button";
   button.className = EDIT_BUTTON_CLASS;
   button.dataset.testid = `button-edit-${templateId}`;
-  button.setAttribute("aria-label", `Edit ${templateId} in builder`);
-  button.textContent = "Edit";
+  button.setAttribute("aria-label", `Edit sheet in builder`);
+  button.textContent = "Edit in Builder";
 
   button.addEventListener("click", (event) => {
     event.preventDefault();
@@ -25,34 +24,29 @@ function createEditButton(templateId: string): HTMLButtonElement {
   return button;
 }
 
-function prepareFooterLayout(footer: HTMLElement): void {
-  footer.classList.add("sheet-edit-footer");
-  if (footer.classList.contains("grid-cols-1")) {
-    footer.classList.remove("grid-cols-1");
-    footer.classList.add("grid-cols-2");
-  }
-}
+function injectEditButtonBesidePrint(printButton: Element): void {
+  const testId = printButton.getAttribute("data-testid");
+  if (!testId) return;
 
-function injectEditButtonForPrintButton(printButton: Element): void {
-  const templateId = extractTemplateIdFromPrintButton(printButton);
-  if (!templateId) return;
+  const templateId = getTemplateIdFromPrintButtonTestId(testId);
+  if (!templateId || !isFreeEditableSheetId(templateId)) return;
 
-  const footer = printButton.closest("footer, [class*='CardFooter']") ?? printButton.parentElement;
-  if (!(footer instanceof HTMLElement)) return;
+  const toolbar = printButton.parentElement;
+  if (!(toolbar instanceof HTMLElement)) return;
 
-  if (footer.querySelector(`[data-testid="button-edit-${templateId}"]`)) {
+  if (toolbar.querySelector(`[data-testid="button-edit-${templateId}"]`)) {
     return;
   }
 
-  prepareFooterLayout(footer);
+  toolbar.classList.add(TOOLBAR_CLASS);
   const editButton = createEditButton(templateId);
-  footer.insertBefore(editButton, printButton);
+  toolbar.insertBefore(editButton, printButton);
 }
 
 export function syncSheetEditButtons(): void {
-  const printButtons = document.querySelectorAll('[data-testid^="button-view-print-"]');
+  const printButtons = document.querySelectorAll('[data-testid^="button-print-"]');
   for (const printButton of printButtons) {
-    injectEditButtonForPrintButton(printButton);
+    injectEditButtonBesidePrint(printButton);
   }
 }
 

@@ -87,6 +87,12 @@ function getLegacyNavs(): NodeListOf<HTMLElement> {
   return document.querySelectorAll("header nav");
 }
 
+/** Sheet view/print screens should stay minimal — no marquee Breakroom sign in the nav. */
+function shouldShowBreakroomNav(): boolean {
+  const path = window.location.pathname;
+  return !path.startsWith("/sheets/") && !path.startsWith("/preview/");
+}
+
 function fixLegacyNavLayout(nav: HTMLElement): void {
   nav.classList.remove("overflow-x-auto", "overflow-x-scroll");
   nav.classList.add("flex-wrap", "overflow-visible");
@@ -95,11 +101,18 @@ function fixLegacyNavLayout(nav: HTMLElement): void {
 function syncBreakroomNavLinks(): void {
   const navs = getLegacyNavs();
   const isBreakroom = window.location.pathname.startsWith("/breakroom");
+  const showBreakroomNav = shouldShowBreakroomNav();
 
   for (const nav of navs) {
     fixLegacyNavLayout(nav);
 
-    let link = nav.querySelector<HTMLElement>('[data-testid="nav-breakroom"]');
+    const existing = nav.querySelector<HTMLElement>('[data-testid="nav-breakroom"]');
+    if (!showBreakroomNav) {
+      existing?.remove();
+      continue;
+    }
+
+    let link = existing;
     if (!link) {
       link = createBreakroomNavLink();
       nav.appendChild(link);
@@ -109,9 +122,10 @@ function syncBreakroomNavLinks(): void {
   }
 }
 
-function allLegacyNavsHaveBreakroomLink(): boolean {
+function allLegacyNavsSynced(): boolean {
   const navs = getLegacyNavs();
   if (navs.length === 0) return false;
+  if (!shouldShowBreakroomNav()) return true;
   return [...navs].every((nav) => nav.querySelector('[data-testid="nav-breakroom"]'));
 }
 
@@ -119,7 +133,7 @@ function waitForLegacyNav(maxAttempts = 240): void {
   let attempts = 0;
   const tick = () => {
     syncBreakroomNavLinks();
-    if (allLegacyNavsHaveBreakroomLink()) {
+    if (allLegacyNavsSynced()) {
       return;
     }
     attempts += 1;

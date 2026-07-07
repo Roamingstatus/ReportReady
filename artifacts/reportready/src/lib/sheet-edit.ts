@@ -6,7 +6,7 @@ import { trackEvent } from "@/lib/analytics";
 export const BUILDER_COMING_SOON_PATH = "/builder";
 export const SHEET_EDIT_INTENT_KEY = "reportready_sheet_edit_intent";
 
-/** Free interactive sheets that support edit-in-builder (homepage + gallery). */
+/** Free interactive sheets that support edit-in-builder (view/print pages). */
 export const FREE_EDITABLE_SHEET_IDS = [
   "icu-brain",
   "quick-dirty",
@@ -18,6 +18,16 @@ export const FREE_EDITABLE_SHEET_IDS = [
 
 export type FreeEditableSheetId = (typeof FREE_EDITABLE_SHEET_IDS)[number];
 
+/** Legacy `/sheets/{slug}` route segment → catalog template id. */
+export const SHEET_ROUTE_TO_TEMPLATE_ID: Record<string, FreeEditableSheetId> = {
+  "drips-decisions": "icu-brain",
+  "vitals-vibes": "vitals-vibes",
+  "quick-dirty": "quick-dirty",
+  "controlled-chaos": "controlled-chaos",
+  "mission-control": "mission-control",
+  "night-shift": "the-night-shift-special",
+};
+
 export interface SheetEditIntent {
   templateId: string;
   sourcePath: string;
@@ -26,6 +36,18 @@ export interface SheetEditIntent {
 
 export function isFreeEditableSheetId(value: string): value is FreeEditableSheetId {
   return (FREE_EDITABLE_SHEET_IDS as readonly string[]).includes(value);
+}
+
+export function getTemplateIdFromSheetPath(pathname = window.location.pathname): string | null {
+  const match = pathname.match(/^\/sheets\/([^/]+)/);
+  if (!match?.[1]) return null;
+  return SHEET_ROUTE_TO_TEMPLATE_ID[match[1]] ?? null;
+}
+
+export function getTemplateIdFromPrintButtonTestId(testId: string): string | null {
+  const match = testId.match(/^button-print-(.+)$/);
+  if (!match?.[1]) return null;
+  return SHEET_ROUTE_TO_TEMPLATE_ID[match[1]] ?? null;
 }
 
 export function saveSheetEditIntent(templateId: string): SheetEditIntent {
